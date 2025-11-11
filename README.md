@@ -167,4 +167,4 @@ Before opening a PR:
 
 ## License
 
-This repository does not include a license file. Add a `LICENSE` file if you intend to publish the project and want to specify terms.
+MIT License
