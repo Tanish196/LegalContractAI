@@ -39,7 +39,19 @@ class IngestionAgent:
             data: Raw input dictionary containing contract information
 
         Returns:
-            Dictionary with normalized metadata:
+            Dictionary with normalized data:
+            {
+                "draft_request": {
+                    "parties": [...],
+                    "jurisdiction": "...",
+                    "agreement_type": "...",
+                    "purpose": "...",
+                    "term": "...",
+                    "effective_date": "...",
+                    "additional_requirements": "..."
+                }
+            }
+            OR for legacy compliance flow:
             {
                 "meta": {
                     "parties": [...],
@@ -58,14 +70,37 @@ class IngestionAgent:
             # Extract or apply default jurisdiction
             jurisdiction = self._extract_jurisdiction(data)
 
-            # Extract or apply default purpose
+            # Extract or apply default purpose / agreement_type
             purpose = self._extract_purpose(data)
+            agreement_type = data.get("agreement_type") or data.get("contract_type") or purpose
 
             # Extract or apply default term
             term = self._extract_term(data)
 
-            # Build normalized metadata
+            # Extract effective date
+            effective_date = data.get("effective_date") or "Upon signing"
+
+            # Extract additional requirements
+            additional_requirements = data.get("additional_requirements") or data.get("requirements") or data.get("key_terms") or ""
+            if data.get("key_terms") and data.get("requirements"):
+                additional_requirements = f"{data.get('requirements')}\n\nKey Terms:\n{data.get('key_terms')}"
+
+            # Extract party names as simple list
+            party_names = [p.get("name") if isinstance(p, dict) else str(p) for p in parties]
+
+            # Build normalized data - support both formats
             result = {
+                # New format for drafting pipeline
+                "draft_request": {
+                    "parties": party_names,
+                    "jurisdiction": jurisdiction,
+                    "agreement_type": agreement_type,
+                    "purpose": purpose,
+                    "term": term,
+                    "effective_date": effective_date,
+                    "additional_requirements": additional_requirements
+                },
+                # Legacy format for compliance pipeline
                 "meta": {
                     "parties": parties,
                     "jurisdiction": jurisdiction,
@@ -74,7 +109,7 @@ class IngestionAgent:
                 }
             }
 
-            logger.info(f"Ingestion completed successfully: {len(parties)} parties found")
+            logger.info(f"Ingestion completed successfully: {len(parties)} parties found, type={agreement_type}")
             return result
 
         except Exception as e:

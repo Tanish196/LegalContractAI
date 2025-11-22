@@ -17,6 +17,9 @@ Or run directly:
 """
 
 from . import ingestion_agent
+from . import template_agent
+from . import structure_agent
+from . import drafting_agent
 from . import clause_agent
 from . import compliance_agent
 from . import risk_agent
@@ -24,6 +27,9 @@ from . import merge_agent
 
 __all__ = [
     'ingestion_agent',
+    'template_agent',
+    'structure_agent',
+    'drafting_agent',
     'clause_agent',
     'compliance_agent',
     'risk_agent',

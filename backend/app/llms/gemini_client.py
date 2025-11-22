@@ -148,6 +148,100 @@ Generate a complete, professional contract in Markdown format."""
 
         return await self.generate(prompt, temperature=0.3, max_tokens=4096)
 
+    async def generate_with_pdfs(self, system_prompt: str, user_prompt: str, pdf_paths: Optional[list] = None, temperature: float = 0.2, max_tokens: int = 4096) -> Dict[str, Any]:
+        """
+        Generate content using Gemini and attach PDF templates as file references.
+
+        Args:
+            system_prompt: System-level instructions.
+            user_prompt: The user-level prompt describing requirements.
+            pdf_paths: List of local PDF absolute paths to include as file URIs.
+            temperature: Sampling temperature.
+            max_tokens: Maximum output tokens.
+
+        Returns:
+            Dict with key 'text' containing the generated contract.
+        """
+        try:
+            files_payload = []
+            if pdf_paths:
+                for p in pdf_paths:
+                    try:
+                        # Ensure absolute path and convert to file URI
+                        from pathlib import Path
+                        path_obj = Path(p).resolve()
+                        uri = f"file:///{path_obj.as_posix()}"
+                        files_payload.append({
+                            "file": {
+                                "mime_type": "application/pdf",
+                                "file_uri": uri
+                            }
+                        })
+                    except Exception:
+                        logger.warning(f"Skipping invalid PDF path: {p}")
+
+            payload = {
+                "prompt": {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ]
+                },
+                "files": files_payload,
+                "generationConfig": {
+                    "maxOutputTokens": max_tokens,
+                    "temperature": temperature,
+                    "responseMimeType": "text/plain"
+                }
+            }
+
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.api_key
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.endpoint, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=120)) as resp:
+                    text = await resp.text()
+                    if resp.status != 200:
+                        logger.error(f"Gemini API error {resp.status}: {text}")
+                        raise Exception(f"Gemini API error: {text}")
+
+                    try:
+                        result = await resp.json()
+                    except Exception:
+                        # If response not JSON, return raw text
+                        return {"text": text}
+
+                    # Try to extract text from common Gemini response shapes
+                    # 1) candidates -> content -> parts -> text
+                    candidates = result.get("candidates") or []
+                    if candidates:
+                        candidate = candidates[0]
+                        content = candidate.get("content") or {}
+                        parts = content.get("parts") or []
+                        if parts:
+                            return {"text": "".join(p.get("text", "") for p in parts)}
+
+                    # 2) outputs -> content -> list of output_text items
+                    outputs = result.get("outputs") or []
+                    if outputs:
+                        out0 = outputs[0]
+                        contents = out0.get("content") or []
+                        texts = []
+                        for c in contents:
+                            if isinstance(c, dict) and c.get("type") == "output_text":
+                                texts.append(c.get("text", ""))
+                        if texts:
+                            return {"text": "\n".join(texts)}
+
+                    # Fallback: return stringified result
+                    return {"text": json.dumps(result)}
+
+        except Exception as e:
+            logger.error(f"Error in generate_with_pdfs: {str(e)}", exc_info=True)
+            raise
+
 
 # Global client instance
 _gemini_client: Optional[GeminiClient] = None

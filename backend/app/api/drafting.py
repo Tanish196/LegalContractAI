@@ -4,10 +4,9 @@ Uses: ingestion_agent + LLM (no other agents)
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, status
-from app.schemas import ContractDraftRequest, ContractDraftResponse, ErrorResponse
-from app.agents import ingestion_agent
-from app.llms import get_gemini_client
+from fastapi import APIRouter, HTTPException, Response, status
+from app.schemas import ContractDraftRequest
+from app.services.draft_service import generate_draft
 
 logger = logging.getLogger(__name__)
 
@@ -19,77 +18,62 @@ router = APIRouter(
 
 @router.post(
     "/draft",
-    response_model=ContractDraftResponse,
-    responses={
-        400: {"model": ErrorResponse},
-        500: {"model": ErrorResponse}
-    },
     summary="Draft a new contract",
-    description="Generate a professional contract using AI based on provided requirements and metadata"
+    description="Generate a professional contract using AI based on provided requirements and PDF templates"
 )
 async def draft_contract(request: ContractDraftRequest):
-    """
-    Draft a new contract using ingestion_agent + LLM.
-    
-    **Service Flow:**
-    1. Normalize input data with ingestion_agent
-    2. Generate contract with LLM
-    3. Return contract with empty compliance_report
-    
-    **No other agents involved (no clause, compliance, risk, or merge agents)**
+    """Draft a new contract using the PDF-template-aware draft service.
+
+    This endpoint preserves the existing frontend route `/api/drafting/draft` and
+    accepts the original `ContractDraftRequest` schema. It returns ONLY the
+    drafted contract text (plain text) in the response body.
     """
     try:
-        logger.info("Starting contract drafting request")
-        
-        # Step 1: Prepare data for ingestion agent
-        input_data = request.model_dump()
-        
-        # Step 2: Normalize input data with ingestion_agent
-        logger.info("Normalizing input data with ingestion_agent")
-        normalized = await ingestion_agent.run(input_data)
-        metadata = normalized["meta"]
-        
-        logger.info(f"Extracted metadata: {metadata}")
-        
-        # Step 3: Generate contract with LLM
-        logger.info("Generating contract with LLM")
-        try:
-            llm_client = get_gemini_client()
-            
-            # Use requirements from request
-            requirements = request.requirements
-            if request.key_terms:
-                requirements += f"\n\nKey Terms:\n{request.key_terms}"
-            
-            drafted_contract = await llm_client.generate_contract(
-                metadata=metadata,
-                requirements=requirements
-            )
-            
-            logger.info(f"Contract generated successfully ({len(drafted_contract)} chars)")
-            
-        except Exception as llm_error:
-            logger.error(f"LLM generation failed: {str(llm_error)}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to generate contract: {str(llm_error)}"
-            )
-        
-        # Step 4: Return response
-        response = ContractDraftResponse(
-            drafted_contract=drafted_contract,
-            compliance_report=[],  # Empty for drafting service
-            metadata=metadata
-        )
-        
-        logger.info("Contract drafting completed successfully")
-        return response
-        
-    except HTTPException:
-        raise
+        logger.info("Starting template-based contract drafting request")
+
+        # Map ContractDraftRequest to the simple payload expected by generate_draft
+        data = request.model_dump()
+
+        # Build parties list: prefer structured parties, fallback to party_a/party_b
+        parties = []
+        if data.get("parties"):
+            # parties may be list of dicts (PartyInput); extract names
+            for p in data.get("parties"):
+                if isinstance(p, dict):
+                    name = p.get("name")
+                else:
+                    # Pydantic may return BaseModel instances
+                    name = getattr(p, "name", None)
+                if name:
+                    parties.append(name)
+        else:
+            if data.get("party_a"):
+                parties.append(data.get("party_a"))
+            if data.get("party_b"):
+                parties.append(data.get("party_b"))
+
+        payload = {
+            "parties": parties,
+            "jurisdiction": data.get("jurisdiction") or "",
+            "agreement_type": data.get("contract_type") or data.get("purpose") or "Agreement",
+            "purpose": data.get("purpose") or "",
+            "term": data.get("term") or "",
+            "effective_date": None,
+            "additional_requirements": data.get("requirements", "")
+        }
+
+        # Add key_terms to additional_requirements if present
+        if data.get("key_terms"):
+            payload["additional_requirements"] += f"\n\nKey Terms:\n{data.get('key_terms')}"
+
+        # Call draft service which uses PDF templates and Gemini
+        result = await generate_draft(payload)
+
+        contract_text = result.get("drafted_contract", "") if isinstance(result, dict) else str(result)
+
+        # Return only the contract text (plain text response)
+        return Response(content=contract_text, media_type="text/plain", status_code=status.HTTP_200_OK)
+
     except Exception as e:
-        logger.error(f"Error in draft_contract: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}"
-        )
+        logger.error(f"Error in template-based draft_contract: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
