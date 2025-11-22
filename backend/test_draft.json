@@ -1,0 +1,9 @@
+{
+  "party_a": "Acme Corporation",
+  "party_b": "Example Industries Inc.",
+  "jurisdiction": "United States",
+  "purpose": "Software Development Service Agreement",
+  "term": "24 months",
+  "requirements": "This is a software development service agreement where Party A (Acme Corporation) will provide comprehensive web application development services to Party B (Example Industries Inc.). The services include: 1) Custom web application development using modern technologies, 2) Database design and implementation, 3) API development and integration, 4) Quality assurance and testing, 5) Deployment and maintenance support. The project will be completed in phases over 24 months with monthly deliverables. Payment terms are net 30 days from invoice date. Both parties agree to maintain confidentiality of proprietary information.",
+  "key_terms": "Monthly deliverables, Net 30 payment terms, Confidentiality provisions, Intellectual property rights transfer upon full payment, Warranty period of 90 days"
+}
