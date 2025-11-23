@@ -145,6 +145,34 @@ curl -X POST http://localhost:8000/api/compliance/check \
 
 ---
 
+### Structured Report Generation
+
+**POST** `/api/reports/generate`
+
+Produce a richly formatted Markdown report (case summary, loophole analysis, etc.) via server-side prompt engineering.
+
+**Request Body:**
+```json
+{
+  "task_type": "case-summary",
+  "content": "Paste raw facts, clauses, or instructions here",
+  "jurisdiction": "Optional context"
+}
+```
+
+**Response:**
+```json
+{
+  "task_type": "case-summary",
+  "report_markdown": "# Case Snapshot...",
+  "metadata": {
+    "jurisdiction": "United States"
+  }
+}
+```
+
+---
+
 ## 🏗️ Architecture
 
 ### Service 1: Contract Drafting
@@ -165,15 +193,15 @@ Request → ingestion_agent → LLM → Response
 
 ```
 Request → clause_agent → [for each clause]:
-  compliance_agent → risk_agent
-  → Response
+  compliance_agent (RAG retrieval + Gemini prompt) → risk_agent
+  → Aggregator → Markdown Report
 ```
 
 **Agents Used:**
 - ✅ `clause_agent` - Splits contract into clauses
-- ✅ `compliance_agent` - Searches legal texts + LLM analysis
+- ✅ `compliance_agent` - Combines RAG retrieval (FAISS + statutes) with Gemini analysis
 - ✅ `risk_agent` - Classifies risk level
-- ✅ `merge_agent` - Available but not used in response
+- ✅ Markdown composer - Generates executive summary + action list for frontend editor
 
 ---
 
@@ -386,6 +414,19 @@ const response = await fetch('http://localhost:8000/api/compliance/check', {
     jurisdiction: "United States"
   })
 });
+
+// Structured Insight
+const response = await fetch('http://localhost:8000/api/reports/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    task_type: 'case-summary',
+    content: 'Facts or clauses to analyze'
+  })
+});
+```
+
+Set the frontend environment variable `VITE_API_BASE_URL` to point at the backend origin (e.g., `http://localhost:8000`) so every AI page proxies requests through the API instead of calling Gemini directly.
 ```
 
 ---

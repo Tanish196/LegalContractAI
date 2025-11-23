@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import Counter
 
+from app.RAG.rag import get_rag_response
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +36,7 @@ class ComplianceAgent:
     # Legal texts directory (relative to backend root)
     LEGAL_TEXTS_DIR = "legal_texts"
 
-    def __init__(self, legal_texts_path: Optional[str] = None):
+    def __init__(self, legal_texts_path: Optional[str] = None, use_rag: bool = True):
         """
         Initialize the compliance agent.
 
@@ -42,6 +44,7 @@ class ComplianceAgent:
             legal_texts_path: Optional custom path to legal texts directory
         """
         self.legal_texts_path = legal_texts_path or self._get_default_legal_texts_path()
+        self.use_rag = use_rag
         logger.info(f"ComplianceAgent initialized with legal texts path: {self.legal_texts_path}")
 
     def _get_default_legal_texts_path(self) -> str:
@@ -88,15 +91,37 @@ class ComplianceAgent:
         try:
             logger.info(f"Analyzing clause for jurisdiction: {jurisdiction}")
 
-            # Step 1: Search for relevant legal snippets
-            snippets = await self._search_legal_snippets(clause, jurisdiction)
+            # Step 1: Retrieve context via RAG or local snippets
+            rag_bundle = await self._fetch_rag_context(clause, jurisdiction)
+
+            if rag_bundle and rag_bundle.get("context_chunks"):
+                snippets = [
+                    {
+                        "text": chunk.get("text", ""),
+                        "source": chunk.get("source", "RAG"),
+                        "score": 1.0
+                    }
+                    for chunk in rag_bundle.get("context_chunks", [])
+                ]
+                rag_findings = rag_bundle.get("rag_findings", [])
+                logger.info("Using %s RAG context chunk(s)", len(snippets))
+            else:
+                snippets = await self._search_legal_snippets(clause, jurisdiction)
+                rag_findings = []
+                logger.info("Falling back to keyword search with %s snippet(s)", len(snippets))
 
             if not snippets:
                 logger.warning("No legal snippets found, using fallback analysis")
                 return self._fallback_analysis(clause)
 
             # Step 2: Build LLM prompt
-            prompt = self._build_llm_prompt(clause, jurisdiction, snippets)
+            prompt = self._build_llm_prompt(
+                clause=clause,
+                jurisdiction=jurisdiction,
+                snippets=snippets,
+                rag_findings=rag_findings,
+                rag_draft=rag_bundle.get("drafted_contract") if rag_bundle else None
+            )
 
             # Step 3: Call LLM for analysis
             if llm_client:
@@ -107,12 +132,33 @@ class ComplianceAgent:
 
             # Step 4: Parse LLM response
             parsed = self._parse_llm_response(analysis_text, snippets)
+            parsed = self._merge_rag_findings(parsed, rag_findings)
 
             result = {
                 "analysis_text": analysis_text,
                 "snippets": snippets,
-                "parsed": parsed
+                "parsed": parsed,
+                "rag_context": rag_bundle
             }
+    async def _fetch_rag_context(
+        self,
+        clause: str,
+        jurisdiction: str
+    ) -> Optional[Dict[str, Any]]:
+        """Use the shared RAG pipeline to retrieve grounded context."""
+        if not self.use_rag:
+            return None
+
+        try:
+            rag_payload = await get_rag_response(clause, jurisdiction=jurisdiction)
+            return {
+                "context_chunks": rag_payload.get("context_chunks", []),
+                "rag_findings": rag_payload.get("compliance_report", []),
+                "drafted_contract": rag_payload.get("drafted_contract", "")
+            }
+        except Exception as exc:
+            logger.warning("RAG pipeline unavailable, reason: %s", exc)
+            return None
 
             logger.info(f"Compliance analysis completed: {parsed.get('risk_level', 'unknown')} risk")
             return result
@@ -289,7 +335,9 @@ class ComplianceAgent:
         self,
         clause: str,
         jurisdiction: str,
-        snippets: List[Dict[str, str]]
+        snippets: List[Dict[str, str]],
+        rag_findings: Optional[List[Dict[str, Any]]] = None,
+        rag_draft: Optional[str] = None
     ) -> str:
         """
         Build LLM prompt for compliance analysis.
@@ -298,6 +346,23 @@ class ComplianceAgent:
             f"Legal Reference {i+1} (from {s['source']}):\n{s['text']}"
             for i, s in enumerate(snippets)
         ])
+
+        rag_findings_text = ""
+        if rag_findings:
+            formatted = []
+            for idx, finding in enumerate(rag_findings, 1):
+                formatted.append(
+                    f"RAG Finding {idx}:\n"
+                    f"Clause: {finding.get('clause', 'N/A')}\n"
+                    f"Risk: {finding.get('risk_level', 'unknown')}\n"
+                    f"Recommendation: {finding.get('fix', 'No fix provided')}\n"
+                    f"Citations: {', '.join(finding.get('citations', []))}"
+                )
+            rag_findings_text = "\n\n".join(formatted)
+
+        rag_draft_text = ""
+        if rag_draft:
+            rag_draft_text = f"\n\nRAG Suggested Rewrite:\n{rag_draft}"
 
         prompt = f"""You are a legal compliance expert analyzing a contract clause for compliance issues.
 
@@ -308,6 +373,10 @@ Contract Clause to Analyze:
 
 Relevant Legal References:
 {snippet_text}
+
+Insights sourced from the Retrieval-Augmented Generation pipeline:
+{rag_findings_text or 'No prior findings; rely on legal references above.'}
+{rag_draft_text}
 
 Please analyze the contract clause against the legal references and provide a JSON response with the following structure:
 {{
@@ -321,6 +390,40 @@ Please analyze the contract clause against the legal references and provide a JS
 Respond ONLY with valid JSON. Do not include any other text or explanation outside the JSON structure."""
 
         return prompt
+
+    def _merge_rag_findings(
+        self,
+        parsed: Dict[str, Any],
+        rag_findings: Optional[List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
+        """Blend RAG findings into parsed output for richer downstream signals."""
+        if not rag_findings:
+            return parsed
+
+        merged = parsed.copy()
+        citations = merged.get("citations", []) or []
+        missing_requirements = merged.get("missing_requirements", []) or []
+
+        for finding in rag_findings:
+            rag_citations = finding.get("citations", []) or []
+            citations.extend(rag_citations)
+
+            fix = finding.get("fix")
+            if fix and fix not in missing_requirements:
+                missing_requirements.append(fix)
+
+        # Deduplicate citations preserving order
+        seen = set()
+        unique_citations = []
+        for cite in citations:
+            if cite and cite not in seen:
+                seen.add(cite)
+                unique_citations.append(cite)
+
+        merged["citations"] = unique_citations
+        merged["missing_requirements"] = missing_requirements
+        merged["rag_findings"] = rag_findings
+        return merged
 
     async def _call_llm(self, llm_client: Any, prompt: str) -> str:
         """

@@ -1,6 +1,6 @@
 # Legal Contract App
 
-A small Vite + React + TypeScript app for legal document assistance: contract drafting, clause classification, compliance checks, loophole detection and case summaries. The project uses Google Generative AI (Gemini) for text generation, Supabase for backend storage, and shadcn/ui + Tailwind for the UI components.
+A small Vite + React + TypeScript app for legal document assistance: contract drafting, clause classification, compliance checks, loophole detection and case summaries. The UI now proxies all AI workloads through the FastAPI backend (LegalContractAI) which handles Gemini access, RAG, and auditing. Supabase powers optional persistence, and shadcn/ui + Tailwind drive the visuals.
 
 This README explains how to set up, run, and develop the project locally.
 
@@ -38,7 +38,7 @@ The app is built with:
 
 - Pre-built pages for common legal tasks (see `src/pages`)
 - Reusable UI primitives under `src/components/ui`
-- AI client using `VITE_GEMINI_API_KEY` with a strict system instruction for direct outputs
+- Backend-aware AI client that calls `VITE_API_BASE_URL` (the FastAPI service)
 - Lightweight Supabase integration (`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`)
 
 ## Requirements
@@ -83,21 +83,21 @@ Open `http://localhost:5173` (Vite default) in your browser.
 
 Create a `.env` file in the project root and add the variables below. Vite expects variables prefixed with `VITE_`.
 
-- `VITE_GEMINI_API_KEY` (required for AI features) — your Google Generative API key. The client sends this in the `x-goog-api-key` header.
-- `VITE_GEMINI_MODEL` (optional) — the Gemini model name to use (defaults to `gemini-2.5-flash` in code).
+- `VITE_API_BASE_URL` (**required**) — URL of the FastAPI backend (e.g. `http://localhost:8000`). All AI requests are proxied here.
+- `VITE_DEFAULT_CREDITS` (optional) — number of free credits to allocate per user per day (defaults to `5`).
 - `VITE_SUPABASE_URL` (optional) — Supabase project URL if using persistence.
 - `VITE_SUPABASE_ANON_KEY` (optional) — Supabase anon/public key.
 
 Example `.env` (do NOT commit to git):
 
 ```text
-VITE_GEMINI_API_KEY=sk-...
-VITE_GEMINI_MODEL=gemini-2.5-flash
+VITE_API_BASE_URL=http://localhost:8000
+VITE_DEFAULT_CREDITS=5
 VITE_SUPABASE_URL=https://xyzcompany.supabase.co
 VITE_SUPABASE_ANON_KEY=public-anon-key
 ```
 
-Security note: Do not expose secret keys in public repositories. The current AI client implementation sends the API key in a browser header (`x-goog-api-key`) which is appropriate for browser API keys. For production consider proxying requests through a backend to keep secrets server-side and to manage usage.
+Security note: Secrets (Gemini API keys, etc.) now live strictly on the backend. Ensure the FastAPI service is configured with valid credentials before starting the frontend.
 
 ## Available scripts
 
@@ -130,7 +130,7 @@ Top-level highlights:
 
 Files worth inspecting:
 
-- `src/lib/ai-clients.ts` — Gemini client and prompt composition
+- `src/lib/ai-clients.ts` — backend API client and task routing
 - `src/lib/supabase.ts` — Supabase client initialization (exports `supabase` or `null`)
 
 ## Development notes

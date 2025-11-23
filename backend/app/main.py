@@ -6,7 +6,7 @@ Main entry point for the backend API
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import drafting_router, compliance_router, health_router
+from app.api import drafting_router, compliance_router, health_router, reports_router
 
 # Configure logging
 logging.basicConfig(
@@ -44,6 +44,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(drafting_router)
 app.include_router(compliance_router)
+app.include_router(reports_router)
 
 # Root endpoint
 @app.get("/", tags=["Root"])
@@ -58,7 +59,8 @@ async def root():
         "health": "/api/health",
         "endpoints": {
             "contract_drafting": "/api/drafting/draft",
-            "compliance_check": "/api/compliance/check"
+            "compliance_check": "/api/compliance/check",
+            "structured_reports": "/api/reports/generate"
         }
     }
 

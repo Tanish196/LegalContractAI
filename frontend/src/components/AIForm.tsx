@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { aiClient } from "@/lib/ai-clients";
-import { marked } from 'marked';
 import { TaskType, AIFormProps } from '@/types/ai';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { recordUsage } from '@/services/usage';
+import GeneratedReport from "@/components/GeneratedReport";
 
 interface UserCredits {
   id: string;
@@ -20,6 +20,18 @@ interface UserCredits {
   credits_remaining: number;
   credits_used_today: number;
   last_reset_date: string;
+}
+
+interface GeneratedResult {
+  markdown: string;
+  metadata?: Record<string, any> | null;
+}
+
+interface ComplianceSummary {
+  total_clauses: number;
+  high_risk: number;
+  medium_risk: number;
+  low_risk: number;
 }
 
 const AIForm: React.FC<AIFormProps> = ({
@@ -33,7 +45,7 @@ const AIForm: React.FC<AIFormProps> = ({
   const [inputText, setInputText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<string | null>(null);
+  const [response, setResponse] = useState<GeneratedResult | null>(null);
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const { user } = useAuth();
 
@@ -196,7 +208,7 @@ const AIForm: React.FC<AIFormProps> = ({
         return;
       }
 
-      const { data, error } = await aiClient.process(taskType, textContent);
+      const { data, error, metadata } = await aiClient.process(taskType, textContent);
       if (error) throw error;
 
       // Record the usage with prompt and response
@@ -225,7 +237,10 @@ const AIForm: React.FC<AIFormProps> = ({
         setCredits(updated as UserCredits);
       }
 
-      setResponse(data ?? '');
+      setResponse({
+        markdown: data ?? '',
+        metadata: metadata ?? null
+      });
       toast.success("Analysis completed successfully");
     } catch (error) {
       console.error("Error:", error);
@@ -241,6 +256,9 @@ const AIForm: React.FC<AIFormProps> = ({
     setFile(null);
     setResponse(null);
   };
+
+  const summary = response?.metadata?.summary as ComplianceSummary | undefined;
+  const actionItems = response?.metadata?.insights?.action_items as Array<any> | undefined;
 
   return (
     <div className="animate-fade-in">
@@ -351,27 +369,52 @@ const AIForm: React.FC<AIFormProps> = ({
         </Card>
         
         {response && (
-          <Card className="overflow-hidden animate-scale-in">
-            <CardContent className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Generated Result</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(response);
-                    toast.success("Copied to clipboard");
-                  }}
-                >
-                  Copy
-                </Button>
+          <div className="space-y-6">
+            {summary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[{
+                  label: "Total Clauses",
+                  value: summary.total_clauses
+                }, {
+                  label: "High Risk",
+                  value: summary.high_risk,
+                  tone: summary.high_risk ? "text-red-500" : ""
+                }, {
+                  label: "Medium Risk",
+                  value: summary.medium_risk,
+                  tone: summary.medium_risk ? "text-amber-500" : ""
+                }, {
+                  label: "Low Risk",
+                  value: summary.low_risk,
+                  tone: "text-emerald-500"
+                }].map((item) => (
+                  <Card key={item.label}>
+                    <CardContent className="py-4">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                      <p className={`text-2xl font-semibold ${item.tone ?? ''}`}>{item.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <div className="rounded-lg bg-secondary p-4 whitespace-pre-wrap font-mono text-sm overflow-auto max-h-[400px]">
-            {/* Render Markdown -> HTML */}
-            <div dangerouslySetInnerHTML={{ __html: marked.parse(response) }} />
-              </div>
-            </CardContent>
-          </Card>
+            )}
+
+            {actionItems && actionItems.length > 0 && (
+              <Card>
+                <CardContent className="py-4 space-y-2">
+                  <p className="text-sm font-semibold">Priority Actions</p>
+                  <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
+                    {actionItems.map((item, idx) => (
+                      <li key={`${item.title}-${idx}`}>
+                        <span className="font-medium">[{(item.risk_level || '').toUpperCase()}]</span> {item.title}: {item.actions?.[0] || 'Review clause'}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            <GeneratedReport value={response.markdown} />
+          </div>
         )}
       </div>
     </div>

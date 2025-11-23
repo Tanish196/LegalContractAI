@@ -3,7 +3,7 @@ Pydantic Schemas for API Request/Response validation
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 
 
 # ============================================================================
@@ -72,19 +72,48 @@ class ComplianceCheckRequest(BaseModel):
         }
 
 
+class InsightTaskRequest(BaseModel):
+    """Schema for general-purpose report generation."""
+    task_type: Literal[
+        "case-summary",
+        "loophole-detection",
+        "clause-classification",
+        "contract-drafting",
+        "compliance-check"
+    ] = Field(..., description="Type of structured report to generate")
+    content: str = Field(..., description="Source text or instructions", min_length=20)
+    jurisdiction: Optional[str] = Field(None, description="Optional jurisdiction context")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional structured data for the LLM prompt")
+
+
+class InsightTaskResponse(BaseModel):
+    """Response schema for general-purpose report generation."""
+    task_type: str = Field(..., description="Echoed task type")
+    report_markdown: str = Field(..., description="Structured Markdown content")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional context (e.g., jurisdiction)")
+
+
 class ComplianceIssue(BaseModel):
     """Single compliance issue in report"""
     clause: str = Field(..., description="Original clause text")
+    heading: Optional[str] = Field(None, description="Readable heading for UI sections")
     risk_level: str = Field(..., description="Risk level: low, medium, or high")
     fix: str = Field(..., description="Suggested fix or modification")
     citations: List[str] = Field(default_factory=list, description="Legal reference sources")
+    issue_summary: Optional[str] = Field(None, description="Summary of the compliance gap")
+    missing_requirements: List[str] = Field(default_factory=list, description="Specific missing elements")
+    recommended_actions: List[str] = Field(default_factory=list, description="Actionable remediation steps")
+    regulation: Optional[str] = Field(None, description="Referenced regulation or framework")
+    reference: Optional[str] = Field(None, description="Specific statutory citation")
 
 
 class ComplianceCheckResponse(BaseModel):
     """Response schema for compliance check endpoint"""
     drafted_contract: str = Field(..., description="Original contract text")
     compliance_report: List[ComplianceIssue] = Field(..., description="List of compliance issues")
-    summary: Optional[Dict[str, Any]] = Field(None, description="Executive summary")
+    summary: Optional[Dict[str, Any]] = Field(None, description="Executive summary metrics")
+    insights: Optional[Dict[str, Any]] = Field(None, description="Action items and suggested language")
+    report_markdown: Optional[str] = Field(None, description="Richly formatted compliance memo in Markdown")
 
 
 # ============================================================================
