@@ -4,6 +4,8 @@ Main entry point for the backend API
 """
 
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import drafting_router, compliance_router, health_router
@@ -24,6 +26,19 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Load environment variables from .env (if present)
+# This ensures variables like GEMINI_API_KEY are available when running via uvicorn
+try:
+    # Look for .env in project root (backend folder)
+    env_path = Path(__file__).resolve().parents[1] / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+        logger = logging.getLogger(__name__)
+        logger.info(f"Loaded environment variables from {env_path}")
+except Exception:
+    # Non-fatal - proceed without blocking startup
+    pass
 
 # Configure CORS
 app.add_middleware(

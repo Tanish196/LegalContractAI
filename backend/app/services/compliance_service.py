@@ -94,12 +94,17 @@ async def check_compliance(contract_text: str, jurisdiction: str = "United State
         for i, clause in enumerate(clauses, 1):
             logger.info(f"Processing clause {i}/{len(clauses)}")
 
+            # Dummy RAG: Match clause to relevant library entries
+            relevant_rules = _match_clause_to_library(clause)
+            logger.info(f"  Dummy RAG matched {len(relevant_rules)} rule set(s)")
+
             # Step 2: compliance_agent - Dummy RAG analysis
             logger.info(f"  Step 2: Running compliance_agent (dummy RAG)...")
             compliance_result = await compliance_agent.run(
                 clause=clause,
                 jurisdiction=jurisdiction,
-                llm_client=llm_client
+                llm_client=llm_client,
+                relevant_rules=relevant_rules  # Pass dummy RAG results
             )
 
             parsed = compliance_result.get("parsed", {})
@@ -131,6 +136,47 @@ async def check_compliance(contract_text: str, jurisdiction: str = "United State
     except Exception as e:
         logger.error(f"Error in compliance pipeline: {e}", exc_info=True)
         raise
+
+
+def _match_clause_to_library(clause_text: str) -> List[Dict[str, Any]]:
+    """Match a clause to relevant entries in CLAUSE_LIBRARY (dummy RAG).
+
+    Args:
+        clause_text: The clause text to match
+
+    Returns:
+        List of matched clause rules with type, text, and rules
+    """
+    clause_lower = clause_text.lower()
+    matched = []
+
+    # Keyword matching for each clause type
+    keywords = {
+        "Payment_Terms": ["payment", "invoice", "fee", "compensation", "remuneration"],
+        "Confidentiality": ["confidential", "secret", "proprietary", "non-disclosure", "nda"],
+        "Termination": ["terminate", "termination", "cancel", "end agreement", "dissolution"],
+        "Liability": ["liability", "liable", "damages", "indemnif", "warranty"],
+        "Non_Competition": ["non-compete", "non-competition", "compete", "competitive"],
+        "Dispute_Resolution": ["dispute", "arbitration", "mediation", "litigation", "court"]
+    }
+
+    for clause_type, keywords_list in keywords.items():
+        if any(kw in clause_lower for kw in keywords_list):
+            matched.append({
+                "type": clause_type,
+                "text": CLAUSE_LIBRARY[clause_type]["text"],
+                "rules": CLAUSE_LIBRARY[clause_type]["rules"]
+            })
+
+    # If no matches, return generic compliance rules
+    if not matched:
+        matched.append({
+            "type": "General",
+            "text": "Standard compliance requirements apply.",
+            "rules": ["Must be clear and unambiguous", "Must comply with jurisdiction laws"]
+        })
+
+    return matched
 
 
 def get_relevant_clauses(issues: List[str]) -> List[Dict[str, Any]]:

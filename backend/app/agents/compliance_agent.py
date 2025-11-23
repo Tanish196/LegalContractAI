@@ -57,11 +57,36 @@ class ComplianceAgent:
 
         return str(legal_texts_dir)
 
+    def _convert_rules_to_snippets(self, relevant_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Convert dummy RAG rules to snippet format for LLM analysis.
+
+        Args:
+            relevant_rules: List of rule dicts with 'type', 'text', and 'rules' keys
+
+        Returns:
+            List of snippets in the format expected by _build_llm_prompt
+        """
+        snippets = []
+        for rule in relevant_rules:
+            # Format rules as bullet points
+            rules_text = "\n".join([f"- {r}" for r in rule.get("rules", [])])
+            snippet_text = f"{rule.get('type', 'General')} Requirements:\n{rule.get('text', '')}\n\nRules:\n{rules_text}"
+            
+            snippets.append({
+                "text": snippet_text,
+                "source": f"CLAUSE_LIBRARY:{rule.get('type', 'General')}",
+                "score": 1.0
+            })
+        
+        return snippets
+
     async def run(
         self,
         clause: str,
         jurisdiction: str,
-        llm_client: Optional[Any] = None
+        llm_client: Optional[Any] = None,
+        relevant_rules: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
         Main entry point for compliance analysis.
@@ -70,6 +95,7 @@ class ComplianceAgent:
             clause: Single contract clause to analyze
             jurisdiction: Legal jurisdiction (e.g., "United States", "European Union")
             llm_client: Optional LLM client for analysis (must have async generate method)
+            relevant_rules: Optional list of relevant rules from dummy RAG (overrides file search)
 
         Returns:
             Dictionary containing:
@@ -88,8 +114,13 @@ class ComplianceAgent:
         try:
             logger.info(f"Analyzing clause for jurisdiction: {jurisdiction}")
 
-            # Step 1: Search for relevant legal snippets
-            snippets = await self._search_legal_snippets(clause, jurisdiction)
+            # Step 1: Use dummy RAG rules if provided, otherwise search legal snippets
+            if relevant_rules:
+                logger.info(f"Using {len(relevant_rules)} dummy RAG rule set(s)")
+                snippets = self._convert_rules_to_snippets(relevant_rules)
+            else:
+                # Fallback to file-based search
+                snippets = await self._search_legal_snippets(clause, jurisdiction)
 
             if not snippets:
                 logger.warning("No legal snippets found, using fallback analysis")
@@ -435,7 +466,8 @@ agent = ComplianceAgent()
 async def run(
     clause: str,
     jurisdiction: str,
-    llm_client: Optional[Any] = None
+    llm_client: Optional[Any] = None,
+    relevant_rules: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
     Convenience function to run the compliance agent.
@@ -444,8 +476,9 @@ async def run(
         clause: Contract clause text
         jurisdiction: Legal jurisdiction
         llm_client: Optional LLM client
+        relevant_rules: Optional dummy RAG rules (overrides file search)
 
     Returns:
         Compliance analysis results
     """
-    return await agent.run(clause, jurisdiction, llm_client)
+    return await agent.run(clause, jurisdiction, llm_client, relevant_rules)

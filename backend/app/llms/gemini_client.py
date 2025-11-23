@@ -180,20 +180,27 @@ Generate a complete, professional contract in Markdown format."""
                     except Exception:
                         logger.warning(f"Skipping invalid PDF path: {p}")
 
+            # Combine system and user prompts (Gemini doesn't have separate system role in this API)
+            combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+            
             payload = {
-                "prompt": {
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ]
-                },
-                "files": files_payload,
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": combined_prompt}
+                        ]
+                    }
+                ],
                 "generationConfig": {
                     "maxOutputTokens": max_tokens,
-                    "temperature": temperature,
-                    "responseMimeType": "text/plain"
+                    "temperature": temperature
                 }
             }
+            
+            # Note: PDF file attachment via file URIs requires the File API upload first
+            # For now, we'll process without PDFs until proper file upload is implemented
+            if pdf_paths:
+                logger.warning(f"PDF attachment not yet implemented (ignoring {len(pdf_paths)} file(s))")
 
             headers = {
                 "Content-Type": "application/json",
