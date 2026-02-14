@@ -30,7 +30,8 @@ export async function recordUsage(
   const serviceType = taskToServiceType[taskType];
 
   try {
-    const { error } = await supabase
+    // 1. Record in history
+    const { error: historyError } = await supabase
       .from('usage_history')
       .insert({
         user_id: userId,
@@ -39,9 +40,24 @@ export async function recordUsage(
         prompt_output: promptOutput || null
       });
 
-    if (error) {
-      console.error('Error recording usage:', error);
-      throw error;
+    if (historyError) throw historyError;
+
+    // 2. Decrement remaining credits
+    const { data: creditData, error: fetchError } = await supabase
+      .from('user_credits')
+      .select('credits_remaining, credits_used_today')
+      .eq('user_id', userId)
+      .single();
+
+    if (!fetchError && creditData) {
+      await supabase
+        .from('user_credits')
+        .update({
+          credits_remaining: Math.max(0, creditData.credits_remaining - 1),
+          credits_used_today: (creditData.credits_used_today || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
     }
   } catch (err) {
     console.error('Failed to record usage:', err);
@@ -57,34 +73,35 @@ export interface CreditInfo {
 
 export async function getUserCredits(userId: string): Promise<CreditInfo> {
   try {
-    // Get the user's total allocated credits
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('total_credits')
-      .eq('id', userId)
+    const defaultTotal = parseInt(import.meta.env.VITE_DEFAULT_CREDITS || '5');
+
+    // Get the user's credits from user_credits table
+    const { data: creditData, error: creditError } = await supabase
+      .from('user_credits')
+      .select('credits_remaining, credits_used_today')
+      .eq('user_id', userId)
       .single();
 
-    if (userError) throw userError;
+    // If no record exists, they might be a new user, default to env value
+    if (creditError && creditError.code !== 'PGRST116') { // PGRST116 is 'no rows'
+      throw creditError;
+    }
 
-    // Get count of usage history entries
-    const { count: usedCredits, error: usageError } = await supabase
-      .from('usage_history')
-      .select('id', { count: 'exact' })
-      .eq('user_id', userId);
-
-    if (usageError) throw usageError;
-
-    const totalCredits = userData?.total_credits || 1000; // Default to 1000 if not set
-    const used = usedCredits || 0;
+    const remaining = creditData ? creditData.credits_remaining : defaultTotal;
+    const used = defaultTotal - remaining;
 
     return {
       used,
-      total: totalCredits,
-      remaining: totalCredits - used
+      total: defaultTotal,
+      remaining
     };
   } catch (err) {
     console.error('Failed to get user credits:', err);
-    throw err;
+    return {
+      used: 0,
+      total: 5,
+      remaining: 5
+    };
   }
 }
 

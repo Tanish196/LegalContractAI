@@ -12,12 +12,23 @@ import { getUserCredits } from "@/services/usage";
 import { Cpu, Zap, Check, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Define CreditInfo type based on the new state structure
+interface CreditInfo {
+  used: number;
+  total: number;
+  remaining: number;
+}
+
 const Profile = () => {
   const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user?.user_metadata?.full_name || "");
   const [loading, setLoading] = useState(false);
-  const [credits, setCredits] = useState({ used: 0, total: 20 });
+  const [credits, setCredits] = useState<CreditInfo>({
+    used: 0,
+    total: 5,
+    remaining: 5
+  });
   const [provider, setProvider] = useState(user?.user_metadata?.llm_provider || "openai");
 
   useEffect(() => {

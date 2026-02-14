@@ -14,7 +14,7 @@ def get_llm_client(provider: str = None, use_fast: bool = False):
     """
     # Define fast model mappings
     OPENAI_FAST = "gpt-4.1-nano"
-    GEMINI_FAST = "gemini-2.5-flash"
+    GEMINI_FAST = "gemini-3-flash"
     
     selected_model = None
     if use_fast:
