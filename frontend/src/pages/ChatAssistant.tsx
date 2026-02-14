@@ -7,6 +7,8 @@ import { Loader2, Send, Bot, User, ArrowRight } from "lucide-react";
 import { aiClient } from "@/lib/ai-clients";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { recordUsage } from "@/services/usage";
 
 interface Message {
     role: 'user' | 'assistant';
@@ -18,29 +20,38 @@ interface Message {
         source: string;
         text: string;
     }[];
+    id: string;
 }
 
 const ChatAssistant = () => {
+    const { user } = useAuth();
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: "Hello! I'm your LegalAssist advisor. I can help you navigate our platform and find the right tools. How can I assist you today?" }
+        {
+            id: 'initial',
+            role: 'assistant',
+            content: "Hello! I'm your LegalAssist advisor. I can help you navigate our platform and find the right tools. How can I assist you today?"
+        }
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
+        scrollToBottom();
+    }, [messages, isLoading]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!input.trim() || isLoading) return;
 
         const userMsg = input.trim();
+        const userMsgId = crypto.randomUUID();
         setInput("");
-        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        setMessages(prev => [...prev, { id: userMsgId, role: 'user', content: userMsg }]);
         setIsLoading(true);
 
         try {
@@ -52,17 +63,34 @@ const ChatAssistant = () => {
             const intent = response.metadata?.intent;
             const action = (response.metadata as any)?.suggested_action;
             const citations = (response.metadata as any)?.citations;
+            const assistantMsgId = crypto.randomUUID();
 
-            setMessages(prev => [...prev, {
+            const assistantMsg: Message = {
+                id: assistantMsgId,
                 role: 'assistant',
                 content: reply,
                 intent,
                 suggested_action: action,
                 citations: citations
-            }]);
+            };
+
+            setMessages(prev => [...prev, assistantMsg]);
+
+            // Persist message to activity history if user is logged in
+            if (user) {
+                recordUsage(
+                    user.id,
+                    'chat-assistant',
+                    userMsg.substring(0, 50) + (userMsg.length > 50 ? '...' : ''),
+                    reply
+                ).catch(err => console.error("Failed to record chat usage:", err));
+            }
         } catch (error) {
             console.error("Chat Error:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error connecting to the AI assistant. Please try again later." }]);
+            setMessages(prev => [
+                ...prev,
+                { id: crypto.randomUUID(), role: 'assistant', content: "Sorry, I encountered an error connecting to the AI assistant. Please try again later." }
+            ]);
         } finally {
             setIsLoading(false);
         }
@@ -81,10 +109,10 @@ const ChatAssistant = () => {
                     </div>
                 </div>
 
-                <ScrollArea className="flex-1 p-6" ref={scrollRef}>
+                <ScrollArea className="flex-1 p-6">
                     <div className="space-y-6">
-                        {messages.map((msg, idx) => (
-                            <div key={idx} className={cn("flex gap-3", msg.role === 'user' ? "flex-row-reverse" : "")}>
+                        {messages.map((msg) => (
+                            <div key={msg.id} className={cn("flex gap-3", msg.role === 'user' ? "flex-row-reverse" : "")}>
                                 <div className={cn(
                                     "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
                                     msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -137,6 +165,7 @@ const ChatAssistant = () => {
                                 </div>
                             </div>
                         )}
+                        <div ref={messagesEndRef} />
                     </div>
                 </ScrollArea>
 

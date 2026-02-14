@@ -10,11 +10,11 @@ def get_llm_client(provider: str = None, use_fast: bool = False):
     
     Args:
         provider: 'openai' or 'google'
-        use_fast: If True, uses lighter/faster models (gpt-4.1-nano, gemini-3-flash)
+        use_fast: If True, uses lighter/faster models (gpt-4.1-nano, gemini-3-flash-preview)
     """
     # Define fast model mappings
     OPENAI_FAST = "gpt-4.1-nano"
-    GEMINI_FAST = "gemini-3-flash"
+    GEMINI_FAST = "gemini-3-flash-preview"
     
     selected_model = None
     if use_fast:

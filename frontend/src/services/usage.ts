@@ -18,7 +18,7 @@ export interface UsageHistoryItem {
   service_type: ServiceType;
   created_at: string;
   prompt_title: string | null;
-  prompt_output: string | null;
+  prompt_output?: string | null;
 }
 
 export async function recordUsage(
@@ -109,7 +109,7 @@ export async function getRecentActivity(userId: string, limit: number = 5): Prom
   try {
     const { data, error } = await supabase
       .from('usage_history')
-      .select('*')
+      .select('id, user_id, service_type, created_at, prompt_title')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -122,6 +122,29 @@ export async function getRecentActivity(userId: string, limit: number = 5): Prom
     return data || [];
   } catch (err) {
     console.error('Failed to fetch recent activity:', err);
+    throw err;
+  }
+}
+
+/**
+ * Fetch full activity details (including heavy output) for a specific item
+ */
+export async function getActivityDetail(activityId: string): Promise<UsageHistoryItem | null> {
+  try {
+    const { data, error } = await supabase
+      .from('usage_history')
+      .select('*')
+      .eq('id', activityId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching activity detail:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Failed to fetch activity detail:', err);
     throw err;
   }
 }

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getRecentActivity, UsageHistoryItem } from '@/services/usage';
+import { getActivityDetail, getRecentActivity, UsageHistoryItem } from '@/services/usage';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { marked } from 'marked';
+import { Loader2 } from 'lucide-react';
 
 const serviceTypeLabels: Record<string, string> = {
   contract_draft: 'Contract Drafting',
@@ -22,6 +23,7 @@ export function RecentActivity() {
   const [activities, setActivities] = useState<UsageHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState<UsageHistoryItem | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [renderAsMarkdown, setRenderAsMarkdown] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -45,6 +47,24 @@ export function RecentActivity() {
 
     loadActivity();
   }, [user]);
+
+  const handleSelectActivity = async (activity: UsageHistoryItem) => {
+    setSelectedActivity(activity);
+
+    if (!activity.prompt_output) {
+      setLoadingDetail(true);
+      try {
+        const detail = await getActivityDetail(activity.id);
+        if (detail) {
+          setSelectedActivity(detail);
+        }
+      } catch (error) {
+        console.error('Failed to load activity detail:', error);
+      } finally {
+        setLoadingDetail(false);
+      }
+    }
+  };
 
   if (!user || (loading && activities.length === 0)) {
     return null;
@@ -74,7 +94,7 @@ export function RecentActivity() {
               <div
                 key={activity.id}
                 className="flex items-center justify-between border-b pb-2 last:border-0 cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
-                onClick={() => setSelectedActivity(activity)}
+                onClick={() => handleSelectActivity(activity)}
               >
                 <div>
                   <p className="font-medium">
@@ -115,14 +135,18 @@ export function RecentActivity() {
                 {selectedActivity && format(new Date(selectedActivity.created_at), 'MMMM d, yyyy h:mm a')}
               </p>
             </div>
-            {selectedActivity?.prompt_output && (
+            {loadingDetail ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : selectedActivity?.prompt_output && (
               <div>
                 <h4 className="text-sm font-medium mb-1">Output</h4>
                 <div className="flex items-center gap-2 mb-2">
                   <Button size="sm" variant={renderAsMarkdown ? 'default' : 'ghost'} onClick={() => setRenderAsMarkdown(true)}>Rendered</Button>
                   <Button size="sm" variant={!renderAsMarkdown ? 'default' : 'ghost'} onClick={() => setRenderAsMarkdown(false)}>Raw</Button>
                 </div>
-                <div className="bg-muted p-4 rounded-lg">
+                <div className="bg-muted p-4 rounded-lg overflow-x-auto">
                   {renderAsMarkdown ? (
                     (() => {
                       const rawHtml = marked.parse(selectedActivity.prompt_output || '');
@@ -135,7 +159,7 @@ export function RecentActivity() {
 
                       return (
                         <div
-                          className="max-w-none text-sm"
+                          className="max-w-none text-sm break-words prose prose-sm dark:prose-invert"
                           dangerouslySetInnerHTML={{ __html: sanitized }}
                         />
                       );
