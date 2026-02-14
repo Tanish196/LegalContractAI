@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #f0f0f0;
+        }
+
+        .status {
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .success {
+            border-left: 4px solid #22c55e;
+        }
+
+        .error {
+            bororder-left: 4px solid #ef4444;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 React App Loading Diagnostics</h1>
+
+    <div id="status-container">
+        <div class="status">
+            <h3>Step 1: HTML Loaded ✓</h3>
+            <p>This page loaded successfully from the Vite server.</p>
+        </div>
+    </div>
+
+    <div id="root" style="display: none;"></div>
+
+    <script>
+        // Capture all console logs
+        const consoleLogs = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function (...args) {
+            consoleLogs.push({ type: 'log', args });
+            originalLog.apply(console, args);
+        };
+        console.error = function (...args) {
+            consoleLogs.push({ type: 'error', args });
+            originalError.apply(console, args);
+        };
+        console.warn = function (...args) {
+            consoleLogs.push({ type: 'warn', args });
+            originalWarn.apply(console, args);
+        };
+
+        function addStatus(title, content, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'status ' + (isError ? 'error' : 'success');
+            div.innerHTML = `<h3>${title}</h3><div>${content}</div>`;
+            document.getElementById('status-container').appendChild(div);
+        }
+
+        function showConsoleLogs() {
+            const pre = document.createElement('pre');
+            pre.textContent = consoleLogs.map(log =>
+                `[${log.type.toUpperCase()}] ${log.args.map(a =>
+                    typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
+                ).join(' ')}`
+            ).join('\n');
+
+            const div = document.createElement('div');
+            div.className = 'status';
+            div.innerHTML = '<h3>Console Output</h3>';
+            div.appendChild(pre);
+            document.getElementById('status-container').appendChild(div);
+        }
+
+        console.log('[TEST] Loading main.tsx module...');
+
+        // Try to load the main React app
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = '/src/main.tsx';
+
+        script.onload = () => {
+            console.log('[TEST] main.tsx loaded successfully');
+            addStatus('Step 2: main.tsx Loaded ✓', 'The React entry point loaded without errors.');
+
+            // Wait a bit for React to render
+            setTimeout(() => {
+                const root = document.getElementById('root');
+                if (root && root.innerHTML.trim() !== '') {
+                    addStatus('Step 3: React Rendered ✓', `React app rendered successfully:<br><pre style="max-height: 200px; overflow: auto;">${root.innerHTML.substring(0, 500)}...</pre>`);
+                } else {
+                    addStatus('Step 3: React NOT Rendered ✗', 'The #root div is still empty after loading main.tsx. Check console for errors.', true);
+                }
+                showConsoleLogs();
+            }, 2000);
+        };
+
+        script.onerror = (error) => {
+            console.error('[TEST] Failed to load main.tsx:', error);
+            addStatus('Step 2: Failed to Load main.tsx ✗',
+                `Error loading the React entry point. This usually means there's a syntax error or missing dependency.<br><pre>${JSON.stringify(error, null, 2)}</pre>`,
+                true
+            );
+            showConsoleLogs();
+        };
+
+        // Also capture window errors
+        window.addEventListener('error', (event) => {
+            console.error('[WINDOW ERROR]', event.error || event.message);
+            addStatus('JavaScript Error ✗',
+                `<pre>Message: ${event.message}\nFile: ${event.filename}\nLine: ${event.lineno}:${event.colno}\n\n${event.error ? event.error.stack : ''}</pre>`,
+                true
+            );
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('[UNHANDLED PROMISE REJECTION]', event.reason);
+            addStatus('Promise Rejection ✗',
+                `<pre>${event.reason}</pre>`,
+                true
+            );
+        });
+
+        document.head.appendChild(script);
+    </script>
+</body>
+
+</html>

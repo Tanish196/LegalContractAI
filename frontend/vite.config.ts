@@ -4,6 +4,8 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  logLevel: 'info',
+  clearScreen: false,
   server: {
     host: "::",
     port: 8080,
@@ -16,4 +18,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: ['html-docx-js']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/html-docx-js/, /node_modules/]
+    }
+  }
 }));

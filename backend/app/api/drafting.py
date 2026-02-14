@@ -19,30 +19,29 @@ router = APIRouter(
 @router.post(
     "/draft",
     summary="Draft a new contract",
-    description="Generate a professional contract using AI based on provided requirements and PDF templates"
+    description="Generate a professional contract using Agentic Drafting Orchestrator"
 )
 async def draft_contract(request: ContractDraftRequest):
-    """Draft a new contract using the PDF-template-aware draft service.
+    """Draft a new contract using the Agentic Drafting Orchestrator.
 
-    This endpoint preserves the existing frontend route `/api/drafting/draft` and
-    accepts the original `ContractDraftRequest` schema. It returns ONLY the
-    drafted contract text (plain text) in the response body.
+    **Service Flow:**
+    1. Orchestrator initializes
+    2. Intent Analysis -> Policy Check -> Template Selection -> Generation -> Review
+    3. Returns drafted contract text
     """
     try:
-        logger.info("Starting template-based contract drafting request")
+        logger.info("Starting agentic contract drafting request")
 
-        # Map ContractDraftRequest to the simple payload expected by generate_draft
+        # Map ContractDraftRequest to metadata
         data = request.model_dump()
-
-        # Build parties list: prefer structured parties, fallback to party_a/party_b
+        
+        # Build parties list
         parties = []
         if data.get("parties"):
-            # parties may be list of dicts (PartyInput); extract names
             for p in data.get("parties"):
                 if isinstance(p, dict):
                     name = p.get("name")
                 else:
-                    # Pydantic may return BaseModel instances
                     name = getattr(p, "name", None)
                 if name:
                     parties.append(name)
@@ -52,28 +51,33 @@ async def draft_contract(request: ContractDraftRequest):
             if data.get("party_b"):
                 parties.append(data.get("party_b"))
 
-        payload = {
-            "parties": parties,
+        requirements_text = data.get("requirements", "")
+        # Add key terms and other context to requirements if simple string input
+        if data.get("key_terms"):
+             requirements_text += f"\n\nKey Terms:\n{data.get('key_terms')}"
+        if data.get("purpose"):
+             requirements_text += f"\n\nPurpose:\n{data.get('purpose')}"
+
+        metadata = {
+            "contract_type": data.get("contract_type") or data.get("purpose") or "General",
             "jurisdiction": data.get("jurisdiction") or "",
-            "agreement_type": data.get("contract_type") or data.get("purpose") or "Agreement",
-            "purpose": data.get("purpose") or "",
-            "term": data.get("term") or "",
-            "effective_date": None,
-            "additional_requirements": data.get("requirements", "")
+            "parties": parties,
+            "term": data.get("term") or ""
         }
 
-        # Add key_terms to additional_requirements if present
-        if data.get("key_terms"):
-            payload["additional_requirements"] += f"\n\nKey Terms:\n{data.get('key_terms')}"
-
-        # Call draft service which uses PDF templates and Gemini
-        result = await generate_draft(payload)
-
-        contract_text = result.get("drafted_contract", "") if isinstance(result, dict) else str(result)
-
+        # Run Agentic Pipeline
+        from app.agents.drafting import DraftingOrchestrator
+        orchestrator = DraftingOrchestrator()
+        
+        final_state = await orchestrator.run(
+            raw_requirements=requirements_text, 
+            metadata=metadata,
+            provider=data.get("provider")
+        )
+        
         # Return only the contract text (plain text response)
-        return Response(content=contract_text, media_type="text/plain", status_code=status.HTTP_200_OK)
+        return Response(content=final_state.final_contract, media_type="text/plain", status_code=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"Error in template-based draft_contract: {e}", exc_info=True)
+        logger.error(f"Error in agentic draft_contract: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

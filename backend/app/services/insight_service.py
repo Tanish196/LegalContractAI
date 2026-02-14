@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional
 
-from app.llms import get_gemini_client
+
+from app.llms import get_llm_client
 
 PROMPT_LIBRARY: Dict[str, Dict[str, Any]] = {
     "case-summary": {
@@ -82,7 +83,7 @@ async def generate_structured_report(
     jurisdiction: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None
 ) -> str:
-    llm_client = get_gemini_client()
+    llm_client = get_llm_client()
     prompt = _build_prompt(task_type, content, jurisdiction, metadata)
     result = await llm_client.generate(prompt, temperature=0.25, max_tokens=2048)
     return result.strip()

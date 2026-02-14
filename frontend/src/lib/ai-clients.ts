@@ -11,14 +11,14 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:800
 type RouteConfig = {
   path: string;
   expects: 'text' | 'json';
-  buildPayload: (content: string) => Record<string, any>;
+  buildPayload: (content: string, options?: Record<string, any>) => Record<string, any>;
   transform: (payload: any) => { result: string; metadata?: Record<string, any> | null };
 };
 
 const defaultReportRoute = (taskType: TaskType): RouteConfig => ({
   path: '/api/reports/generate',
   expects: 'json',
-  buildPayload: (content) => ({ task_type: taskType, content }),
+  buildPayload: (content, options) => ({ task_type: taskType, content, ...options }),
   transform: (payload) => ({ result: payload.report_markdown, metadata: payload })
 });
 
@@ -26,19 +26,25 @@ const ROUTES: Record<TaskType, RouteConfig> = {
   'contract-drafting': {
     path: '/api/drafting/draft',
     expects: 'text',
-    buildPayload: (content) => ({
+    buildPayload: (content, options) => ({
       requirements: content,
-      purpose: 'Contract generated via UI',
-      jurisdiction: 'United States'
+      purpose: options?.contractType || 'Contract generated via UI',
+      jurisdiction: options?.jurisdiction || 'United States',
+      key_terms: options?.keyTerms,
+      parties: [
+        { name: options?.partyA || 'Party A', role: 'Client' },
+        { name: options?.partyB || 'Party B', role: 'Counterparty' }
+      ]
     }),
     transform: (payload: string) => ({ result: payload, metadata: null })
   },
   'compliance-check': {
     path: '/api/compliance/check',
     expects: 'json',
-    buildPayload: (content) => ({
+    buildPayload: (content, options) => ({
       contract_text: content,
-      jurisdiction: 'United States'
+      jurisdiction: options?.jurisdiction || 'United States',
+      standards: options?.standards || []
     }),
     transform: (payload) => ({
       result: payload.report_markdown || payload.drafted_contract || '',
@@ -46,33 +52,55 @@ const ROUTES: Record<TaskType, RouteConfig> = {
     })
   },
   'case-summary': {
-    path: '/api/reports/generate',
+    path: '/api/summarization/summarize-case',
     expects: 'json',
-    buildPayload: (content) => ({ task_type: 'case-summary', content }),
-    transform: (payload) => ({ result: payload.report_markdown, metadata: payload })
+    buildPayload: (content) => ({ case_text: content }),
+    transform: (payload) => ({ result: payload.summary, metadata: payload })
   },
   'clause-classification': {
-    path: '/api/reports/generate',
+    path: '/api/analysis/analyze-clauses',
     expects: 'json',
-    buildPayload: (content) => ({ task_type: 'clause-classification', content }),
-    transform: (payload) => ({ result: payload.report_markdown, metadata: payload })
+    buildPayload: (content) => ({ text: content }),
+    transform: (payload) => ({
+      result: typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2),
+      metadata: payload
+    })
   },
   'loophole-detection': {
     path: '/api/reports/generate',
     expects: 'json',
     buildPayload: (content) => ({ task_type: 'loophole-detection', content }),
     transform: (payload) => ({ result: payload.report_markdown, metadata: payload })
+  },
+  'legal-research': {
+    path: '/api/research/legal-research',
+    expects: 'json',
+    buildPayload: (content, options) => ({ query: content, jurisdiction: options?.jurisdiction || 'India' }),
+    transform: (payload) => {
+      // Format citations as markdown
+      const citations = payload.citations ? payload.citations.map((c: any) => `> **${c.title}** (${c.source})\n> ${c.text}`).join('\n\n') : '';
+      return {
+        result: `${payload.answer}\n\n### Citations\n${citations}`,
+        metadata: payload
+      };
+    }
+  },
+  'chat-assistant': {
+    path: '/api/chat/chat-assistant',
+    expects: 'json',
+    buildPayload: (content) => ({ message: content }),
+    transform: (payload) => ({ result: payload.reply, metadata: payload })
   }
 };
 
 export const aiClient = {
-  async process(taskType: TaskType, content: string): Promise<AIResponse> {
+  async process(taskType: TaskType, content: string, options?: Record<string, any>): Promise<AIResponse> {
     try {
       const route = ROUTES[taskType] ?? defaultReportRoute(taskType);
       const response = await fetch(`${API_BASE_URL}${route.path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(route.buildPayload(content))
+        body: JSON.stringify(route.buildPayload(content, options))
       });
 
       if (!response.ok) {

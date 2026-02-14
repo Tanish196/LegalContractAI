@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Diagnostics</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .success {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .pending {
+            color: #f59e0b;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Frontend Connectivity Diagnostics</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Backend Connectivity</h2>
+        <p id="backend-status" class="pending">Testing...</p>
+        <pre id="backend-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Supabase Connection</h2>
+        <p id="supabase-status" class="pending">Testing...</p>
+        <pre id="supabase-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Environment Variables</h2>
+        <p id="env-status" class="pending">Checking...</p>
+        <pre id="env-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: CORS Check</h2>
+        <p id="cors-status" class="pending">Testing...</p>
+        <pre id="cors-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Load Main App</h2>
+        <button onclick="loadMainApp()">Try Loading Main App</button>
+        <p id="app-status"></p>
+        <div id="app-container"></div>
+    </div>
+
+    <script>
+        console.log('[DIAGNOSTIC] Starting tests...');
+
+        // Test 1: Backend
+        fetch('http://localhost:8000/')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('backend-status').innerHTML = '<span class="success">✓ Backend Connected</span>';
+                document.getElementById('backend-result').textContent = JSON.stringify(data, null, 2);
+                console.log('[DIAGNOSTIC] Backend test passed:', data);
+            })
+            .catch(err => {
+                document.getElementById('backend-status').innerHTML = '<span class="error">✗ Backend Connection Failed</span>';
+                document.getElementById('backend-result').textContent = err.toString();
+                console.error('[DIAGNOSTIC] Backend test failed:', err);
+            });
+
+        // Test 2: Supabase
+        const supabaseUrl = 'https://ovurapllfujhhnxiklmt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92dXJhcGxsZnVqaGhueGlrbG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDM3NzIsImV4cCI6MjA3MzQxOTc3Mn0.Jw_rIkGfLws13D-hwfODElwb2vIHuwiD0C6arWZhYRE';
+
+        fetch(`${supabaseUrl}/rest/v1/`, {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+            }
+        })
+            .then(res => {
+                document.getElementById('supabase-status').innerHTML = '<span class="success">✓ Supabase Connected (Status: ' + res.status + ')</span>';
+                return res.text();
+            })
+            .then(data => {
+                document.getElementById('supabase-result').textContent = data || 'Connection successful';
+                console.log('[DIAGNOSTIC] Supabase test passed');
+            })
+            .catch(err => {
+                document.getElementById('supabase-status').innerHTML = '<span class="error">✗ Supabase Connection Failed</span>';
+                document.getElementById('supabase-result').textContent = err.toString();
+                console.error('[DIAGNOSTIC] Supabase test failed:', err);
+            });
+
+        // Test 3: Environment
+        // Note: import.meta.env only works in ES modules loaded via Vite
+        // We can't check environment variables from a plain HTML file
+        document.getElementById('env-status').innerHTML = '<span class="success">✓ Skipped (requires Vite module)</span>';
+        document.getElementById('env-result').textContent = 'Environment variables are only accessible in Vite modules.\nThe main app at http://localhost:8080/ will use them correctly.\n\nExpected variables:\n- VITE_SUPABASE_URL\n- VITE_SUPABASE_ANON_KEY\n- VITE_GEMINI_API_KEY\n- VITE_API_BASE_URL';
+        console.log('[DIAGNOSTIC] Environment check skipped (not in ES module context)');
+
+        // Test 4: CORS
+        fetch('http://localhost:8000/api/health', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('cors-status').innerHTML = '<span class="success">✓ CORS Working</span>';
+                document.getElementById('cors-result').textContent = 'No CORS errors detected\n\n' + JSON.stringify(data, null, 2);
+                console.log('[DIAGNOSTIC] CORS test passed:', data);
+            })
+            .catch(err => {
+                if (err.toString().includes('CORS')) {
+                    document.getElementById('cors-status').innerHTML = '<span class="error">✗ CORS Error Detected!</span>';
+                } else {
+                    document.getElementById('cors-status').innerHTML = '<span class="error">✗ Request Failed (might be CORS)</span>';
+                }
+                document.getElementById('cors-result').textContent = err.toString();
+                console.error('[DIAGNOSTIC] CORS test failed:', err);
+            });
+
+        // Test 5: Load main app
+        function loadMainApp() {
+            document.getElementById('app-status').innerHTML = '<span class="pending">Loading main app...</span>';
+            console.log('[DIAGNOSTIC] Attempting to load main app');
+
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = '/src/main.tsx';
+            script.onerror = () => {
+                document.getElementById('app-status').innerHTML = '<span class="error">✗ Failed to load main.tsx</span>';
+                console.error('[DIAGNOSTIC] Failed to load main.tsx');
+            };
+            script.onload = () => {
+                document.getElementById('app-status').innerHTML = '<span class="success">✓ main.tsx loaded (check console for React errors)</span>';
+                console.log('[DIAGNOSTIC] main.tsx loaded successfully');
+            };
+            document.head.appendChild(script);
+        }
+
+        console.log('[DIAGNOSTIC] All diagnostic tests initiated');
+    </script>
+</body>
+
+</html>

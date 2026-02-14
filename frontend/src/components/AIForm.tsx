@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { aiClient } from "@/lib/ai-clients";
+import PipelineViewer, { DEFAULT_STAGES } from "@/components/PipelineViewer";
 import { TaskType, AIFormProps } from '@/types/ai';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +41,7 @@ const AIForm: React.FC<AIFormProps> = ({
   placeholder = "Enter details here...",
   taskType,
   additionalFields,
+  additionalData,
 }) => {
   const [inputMethod, setInputMethod] = useState<"text" | "file">("text");
   const [inputText, setInputText] = useState("");
@@ -123,23 +125,23 @@ const AIForm: React.FC<AIFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (inputMethod === "text" && !inputText.trim()) {
       toast.error("Please enter some text");
       return;
     }
-    
+
     if (inputMethod === "file" && !file) {
       toast.error("Please upload a file");
       return;
     }
-    
+
     setIsLoading(true);
     setResponse(null);
-    
+
     try {
       let textContent = inputText;
-      
+
       if (inputMethod === "file" && file) {
         const text = await file.text();
         textContent = text;
@@ -208,7 +210,7 @@ const AIForm: React.FC<AIFormProps> = ({
         return;
       }
 
-      const { data, error, metadata } = await aiClient.process(taskType, textContent);
+      const { data, error, metadata } = await aiClient.process(taskType, textContent, additionalData);
       if (error) throw error;
 
       // Record the usage with prompt and response
@@ -273,11 +275,11 @@ const AIForm: React.FC<AIFormProps> = ({
             <div className="text-xs">Used today: {credits ? credits.credits_used_today : '—'}</div>
           </div>
         </div>
-        
+
         <Card className="mb-8">
           <CardContent className="p-6">
-            <Tabs 
-              defaultValue="text" 
+            <Tabs
+              defaultValue="text"
               onValueChange={(value) => setInputMethod(value as "text" | "file")}
               className="w-full"
             >
@@ -285,7 +287,7 @@ const AIForm: React.FC<AIFormProps> = ({
                 <TabsTrigger value="text">Text Input</TabsTrigger>
                 <TabsTrigger value="file">File Upload</TabsTrigger>
               </TabsList>
-              
+
               <form onSubmit={handleSubmit}>
                 <TabsContent value="text">
                   <div className="space-y-4">
@@ -297,11 +299,11 @@ const AIForm: React.FC<AIFormProps> = ({
                     />
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="file">
                   <div className="space-y-4">
-                    <Label 
-                      htmlFor="file-upload" 
+                    <Label
+                      htmlFor="file-upload"
                       className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-secondary/50 hover:bg-secondary transition-colors"
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -320,7 +322,7 @@ const AIForm: React.FC<AIFormProps> = ({
                         onChange={handleFileChange}
                       />
                     </Label>
-                    
+
                     {file && (
                       <div className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-green-500" />
@@ -331,16 +333,16 @@ const AIForm: React.FC<AIFormProps> = ({
                     )}
                   </div>
                 </TabsContent>
-                
+
                 {additionalFields && (
                   <div className="mt-6">
                     {additionalFields}
                   </div>
                 )}
-                
+
                 <div className="flex flex-wrap gap-3 mt-6">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isLoading}
                     className="min-w-[120px]"
                   >
@@ -351,11 +353,11 @@ const AIForm: React.FC<AIFormProps> = ({
                       </>
                     ) : "Generate"}
                   </Button>
-                  
+
                   {(inputText || file) && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={resetForm}
                       disabled={isLoading}
                     >
@@ -367,7 +369,12 @@ const AIForm: React.FC<AIFormProps> = ({
             </Tabs>
           </CardContent>
         </Card>
-        
+
+        {/* Agent Pipeline Progress Viewer — only for contract drafting */}
+        {isLoading && taskType === "contract-drafting" && (
+          <PipelineViewer stages={DEFAULT_STAGES} isActive={isLoading} />
+        )}
+
         {response && (
           <div className="space-y-6">
             {summary && (

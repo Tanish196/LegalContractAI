@@ -1,28 +1,34 @@
-"""Application configuration exposed as module-level constants.
-
-Use environment variables to override defaults.
-"""
 import os
-from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Gemini / Gemini API key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# App Settings
+PROJECT_NAME = "LegalContractAI"
+VERSION = "1.0.0"
 
-# Directory where PDF templates are stored (absolute)
-PDF_TEMPLATE_DIR = Path(os.getenv("PDF_TEMPLATE_DIR", "")) if os.getenv("PDF_TEMPLATE_DIR") else (Path(__file__).parent / "pdf_templates")
-try:
-    # Ensure Path object
-    if not isinstance(PDF_TEMPLATE_DIR, Path):
-        PDF_TEMPLATE_DIR = Path(PDF_TEMPLATE_DIR)
-    PDF_TEMPLATE_DIR = PDF_TEMPLATE_DIR.resolve()
-except Exception:
-    PDF_TEMPLATE_DIR = Path(__file__).parent / "pdf_templates"
+# AI Settings
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Model selection
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-1.5-pro")
+# Pinecone Settings
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-east-1")
 
-__all__ = ["GEMINI_API_KEY", "PDF_TEMPLATE_DIR", "MODEL_NAME"]
+# Supabase Settings
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# File Paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PDF_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+
+
+# Pinecone Indexes
+# Pinecone Indexes
+INDEX_STATUTES = "indian-statutes"
+INDEX_REGULATIONS = "indian-regulations"
+INDEX_CLAUSES = "contract-clauses"
+INDEX_CASES = "case-law-summaries"
+INDEX_SYNTHETIC = "synthetic-jurisdictions" # Optional/Legacy
+INDEX_COMMENTARY = "legal-commentary" # Optional/Legacy

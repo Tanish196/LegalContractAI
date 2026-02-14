@@ -12,13 +12,19 @@ const ContractDrafting = () => {
     triggerOnce: true,
     threshold: 0.1,
   });
-  
+
+  const [contractType, setContractType] = React.useState("service");
+  const [jurisdiction, setJurisdiction] = React.useState("us");
+  const [partyA, setPartyA] = React.useState("");
+  const [partyB, setPartyB] = React.useState("");
+  const [keyTerms, setKeyTerms] = React.useState("");
+
   const additionalFields = (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="contract-type">Contract Type</Label>
-          <Select defaultValue="service">
+          <Select value={contractType} onValueChange={setContractType}>
             <SelectTrigger>
               <SelectValue placeholder="Select contract type" />
             </SelectTrigger>
@@ -31,10 +37,10 @@ const ContractDrafting = () => {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="jurisdiction">Jurisdiction</Label>
-          <Select defaultValue="us">
+          <Select value={jurisdiction} onValueChange={setJurisdiction}>
             <SelectTrigger>
               <SelectValue placeholder="Select jurisdiction" />
             </SelectTrigger>
@@ -44,46 +50,66 @@ const ContractDrafting = () => {
               <SelectItem value="uk">United Kingdom</SelectItem>
               <SelectItem value="ca">Canada</SelectItem>
               <SelectItem value="au">Australia</SelectItem>
+              <SelectItem value="in">India</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="party-a">Party A (Your Client)</Label>
-          <Input id="party-a" placeholder="Full legal name" />
+          <Input
+            id="party-a"
+            placeholder="Full legal name"
+            value={partyA}
+            onChange={(e) => setPartyA(e.target.value)}
+          />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="party-b">Party B (Counter-party)</Label>
-          <Input id="party-b" placeholder="Full legal name" />
+          <Input
+            id="party-b"
+            placeholder="Full legal name"
+            value={partyB}
+            onChange={(e) => setPartyB(e.target.value)}
+          />
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="key-terms">Key Contract Terms</Label>
-        <Textarea 
-          id="key-terms" 
+        <Textarea
+          id="key-terms"
           placeholder="List key terms, deliverables, payment information, term length, etc."
           className="min-h-[100px]"
+          value={keyTerms}
+          onChange={(e) => setKeyTerms(e.target.value)}
         />
       </div>
     </div>
   );
-  
+
   return (
     <div className="container-tight py-16" ref={ref}>
       <div className={cn(
         "transition-all duration-500",
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       )}>
-        <AIForm 
+        <AIForm
           title="Contract Drafting"
           description="Create professional contracts with AI assistance, ensuring comprehensive coverage of terms and conditions."
           placeholder="Describe the contract you need..."
           taskType="contract-drafting"
           additionalFields={additionalFields}
+          additionalData={{
+            contractType,
+            jurisdiction,
+            partyA,
+            partyB,
+            keyTerms
+          }}
         />
       </div>
     </div>

@@ -29,14 +29,9 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [mounted, setMounted] = useState(false)
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -66,14 +61,8 @@ export function ThemeProvider({
     },
   }
 
-  if (!mounted) {
-    return (
-      <div style={{ visibility: 'hidden' }}>
-        {children}
-      </div>
-    )
-  }
-
+  // Theme is already set by the inline script in index.html,
+  // so we can render children immediately without visibility:hidden
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
       {children}

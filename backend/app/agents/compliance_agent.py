@@ -17,7 +17,9 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from collections import Counter
 
-from app.RAG.rag import get_rag_response
+
+from app.RAG.pinecone_store import pinecone_service
+from app.config import INDEX_STATUTES
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -99,7 +101,7 @@ class ComplianceAgent:
                     {
                         "text": chunk.get("text", ""),
                         "source": chunk.get("source", "RAG"),
-                        "score": 1.0
+                        "score": chunk.get("score", 1.0)
                     }
                     for chunk in rag_bundle.get("context_chunks", [])
                 ]
@@ -158,11 +160,28 @@ class ComplianceAgent:
             return None
 
         try:
-            rag_payload = await get_rag_response(clause, jurisdiction=jurisdiction)
+            # Connect to vector store
+            vector_store = pinecone_service.get_vector_store(INDEX_STATUTES)
+            
+            # Similarity search
+            # We want top 3 results
+            docs = vector_store.similarity_search_with_score(
+                query=f"{clause} jurisdiction:{jurisdiction}",
+                k=3
+            )
+            
+            context_chunks = []
+            for doc, score in docs:
+                context_chunks.append({
+                    "text": doc.page_content,
+                    "source": doc.metadata.get("source", "Unknown Statute"),
+                    "score": score
+                })
+                
             return {
-                "context_chunks": rag_payload.get("context_chunks", []),
-                "rag_findings": rag_payload.get("compliance_report", []),
-                "drafted_contract": rag_payload.get("drafted_contract", "")
+                "context_chunks": context_chunks,
+                "rag_findings": [], # Placeholder for now, could be enhanced with LLM pre-analysis
+                "drafted_contract": ""
             }
         except Exception as exc:
             logger.warning("RAG pipeline unavailable, reason: %s", exc)

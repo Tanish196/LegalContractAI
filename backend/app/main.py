@@ -6,7 +6,10 @@ Main entry point for the backend API
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import drafting_router, compliance_router, health_router, reports_router
+from app.api import (
+    drafting_router, compliance_router, health_router, reports_router,
+    analysis_router, research_router, summarization_router, chat_router
+)
 
 # Configure logging
 logging.basicConfig(
@@ -46,6 +49,10 @@ app.include_router(health_router)
 app.include_router(drafting_router)
 app.include_router(compliance_router)
 app.include_router(reports_router)
+app.include_router(analysis_router)
+app.include_router(research_router)
+app.include_router(summarization_router)
+app.include_router(chat_router)
 
 # Root endpoint
 @app.get("/", tags=["Root"])
@@ -77,16 +84,19 @@ async def startup_event():
     logger.info("=" * 60)
     
     # Verify agents are available
+    # Verify agents are available
     try:
-        from app.agents import ingestion_agent, clause_agent, compliance_agent, risk_agent, merge_agent
-        logger.info("✓ All agents loaded successfully")
+        from app.agents.compliance.orchestrator import ComplianceOrchestrator
+        from app.agents.drafting.orchestrator import DraftingOrchestrator
+        logger.info("✓ Agent Orchestrators loaded successfully")
     except Exception as e:
-        logger.error(f"✗ Failed to load agents: {str(e)}")
+        logger.error(f"✗ Failed to load Agent Orchestrators: {str(e)}")
     
+
     # Verify LLM client
     try:
-        from app.llms import get_gemini_client
-        client = get_gemini_client()
+        from app.llms import get_llm_client
+        client = get_llm_client()
         logger.info("✓ LLM client initialized successfully")
     except Exception as e:
         logger.error(f"✗ Failed to initialize LLM client: {str(e)}")

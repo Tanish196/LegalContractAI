@@ -14,6 +14,8 @@ import ComplianceCheck from "@/pages/ComplianceCheck";
 import ContractDrafting from "@/pages/ContractDrafting";
 import LoopholeDetection from "@/pages/LoopholeDetection";
 import ClauseClassification from "@/pages/ClauseClassification";
+import LegalResearch from "@/pages/LegalResearch";
+import ChatAssistant from "@/pages/ChatAssistant";
 import NotFound from "@/pages/NotFound";
 import About from "@/pages/About";
 import Pricing from "@/pages/Pricing";
@@ -77,23 +79,23 @@ const App = () => (
                   <Route path="/api" element={<Api />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
-                  
+
                   {/* Auth routes */}
-                  <Route 
-                    path="/login" 
+                  <Route
+                    path="/login"
                     element={
                       <PublicRoute>
                         <Login />
                       </PublicRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/signup" 
+                  <Route
+                    path="/signup"
                     element={
                       <PublicRoute>
                         <Signup />
                       </PublicRoute>
-                    } 
+                    }
                   />
 
                   {/* Protected routes */}
@@ -166,6 +168,22 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <ClauseClassification />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/legal-research"
+                    element={
+                      <ProtectedRoute>
+                        <LegalResearch />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/chat-assistant"
+                    element={
+                      <ProtectedRoute>
+                        <ChatAssistant />
                       </ProtectedRoute>
                     }
                   />

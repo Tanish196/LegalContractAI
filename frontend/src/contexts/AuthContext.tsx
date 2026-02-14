@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +17,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const navigate = useNavigate();
 
   const refreshUser = async () => {
     try {
@@ -32,6 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Safety timeout: if auth takes more than 5 seconds, stop loading
+    const timeout = setTimeout(() => {
+      console.warn('[AuthProvider] Auth initialization timed out after 5 seconds');
+      setLoading(false);
+    }, 5000);
+
     async function initializeAuth() {
       try {
         if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
@@ -41,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!supabase || typeof supabase.auth?.getSession !== 'function') {
+          console.warn('[AuthProvider] Supabase client not available');
           setLoading(false);
           return;
         }
@@ -56,25 +61,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const currentUser = session?.user ?? null;
           setUser(currentUser);
           setError(null);
-
-          // Only redirect to dashboard on sign_in event
-          if (event === 'SIGNED_IN') {
-            navigate('/dashboard');
-          }
         });
 
         return () => subscription.unsubscribe();
       } catch (err) {
         console.error('Auth initialization error:', err);
         setError(err as Error);
-        toast.error('Failed to initialize authentication');
+        // Don't show toast here as it may not be ready yet
       } finally {
+        clearTimeout(timeout);
         setLoading(false);
       }
     }
 
     initializeAuth();
-  }, [navigate]);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const signOut = async () => {
     try {
@@ -94,10 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+      <div style={{ display: 'flex', height: '100vh', width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p style={{ fontSize: '14px', color: '#6b7280' }}>Loading...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );

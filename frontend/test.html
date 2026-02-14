@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+    <script>
+        console.log("TEST: HTML is loading");
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log("TEST: DOM Content Loaded");
+            document.body.innerHTML += '<h1 style="color: green;">✓ Basic HTML Working</h1>';
+        });
+        
+        window.addEventListener('error', (e) => {
+            console.error("TEST: JavaScript Error:", e.message, e.filename, e.lineno);
+            document.body.innerHTML += `<div style="color: red; padding: 20px; border: 2px solid red; margin: 20px;">
+                <h2>JavaScript Error Caught:</h2>
+                <pre>${e.message}\n${e.filename}:${e.lineno}</pre>
+            </div>`;
+        });
+    </script>
+</head>
+<body>
+    <h1>Testing Basic Server Response</h1>
+    <p>If you see this, the server is working.</p>
+    <script>
+        console.log("TEST: Inline script executing");
+        document.write('<p style="color: blue;">✓ JavaScript is executing</p>');
+    </script>
+</body>
+</html>

@@ -11,7 +11,8 @@ Purpose:
 import logging
 from typing import Dict, List, Any
 from pathlib import Path
-from app.llms import get_gemini_client
+
+from app.llms import get_llm_client
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -59,7 +60,7 @@ class DraftingAgent:
             logger.info(f"Calling Gemini with {len(pdf_paths)} PDF template(s)")
 
             # Call Gemini client
-            client = get_gemini_client()
+            client = get_llm_client()
             result = await client.generate_with_pdfs(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,

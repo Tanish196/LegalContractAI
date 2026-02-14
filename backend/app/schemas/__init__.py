@@ -3,7 +3,60 @@ Pydantic Schemas for API Request/Response validation
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any, Literal
+from typing import List, Optional, Dict, Any, Union, Literal
+
+
+# --- Common ---
+class ErrorResponse(BaseModel):
+    detail: str
+
+
+# --- Clause Analysis ---
+class ClauseAnalysisRequest(BaseModel):
+    text: str = Field(..., min_length=10, description="Contract text to analyze")
+
+class ClauseRisk(BaseModel):
+    clause_text: str
+    risk_level: str = Field(..., pattern="^(High|Medium|Low)$")
+    explanation: str
+    recommendation: Optional[str] = None
+
+class ClauseAnalysisResponse(BaseModel):
+    risks: List[ClauseRisk]
+    summary: str
+
+# --- Legal Research ---
+class LegalResearchRequest(BaseModel):
+    query: str = Field(..., min_length=5, description="Legal question")
+    jurisdiction: str = "India"
+
+class Citation(BaseModel):
+    title: str
+    source: str
+    text: str
+
+class LegalResearchResponse(BaseModel):
+    answer: str
+    citations: List[Citation]
+
+# --- Case Summarization ---
+class CaseSummaryRequest(BaseModel):
+    case_text: str = Field(..., min_length=100)
+
+class CaseSummaryResponse(BaseModel):
+    summary: str
+    key_holdings: List[str]
+    citations: List[str]
+
+# --- Chat Assistant ---
+class ChatRequest(BaseModel):
+    message: str
+    history: List[Dict[str, str]] = [] # [{"role": "user", "content": "..."}]
+
+class ChatResponse(BaseModel):
+    reply: str
+    intent: str
+    suggested_action: Optional[str] = None
 
 
 # ============================================================================
@@ -84,6 +137,7 @@ class InsightTaskRequest(BaseModel):
     content: str = Field(..., description="Source text or instructions", min_length=20)
     jurisdiction: Optional[str] = Field(None, description="Optional jurisdiction context")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional structured data for the LLM prompt")
+    provider: Optional[str] = Field(None, description="Preferred LLM provider (openai or google)")
 
 
 class InsightTaskResponse(BaseModel):

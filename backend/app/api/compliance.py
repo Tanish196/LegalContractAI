@@ -24,23 +24,19 @@ router = APIRouter(
         500: {"model": ErrorResponse}
     },
     summary="Check contract compliance",
-    description="Analyze contract for compliance issues using multi-agent pipeline with dummy RAG logic"
+    description="Analyze contract for compliance issues using multi-agent pipeline (ComplianceOrchestrator)"
 )
 async def check_compliance_endpoint(request: ComplianceCheckRequest):
     """
-    Check contract compliance using multi-agent pipeline.
+    Check contract compliance using the Agentic Compliance Orchestrator.
     
     **Service Flow:**
-    1. Split contract into clauses (clause_agent)
-    2. For each clause:
-       - Analyze compliance with dummy RAG rules (compliance_agent)
-       - Classify risk level (risk_agent)
-    3. Return compliance report
-    
-    **Multi-Agent Pipeline: clause_agent → compliance_agent → risk_agent**
+    1. Orchestrator initializes ContractState
+    2. Ingestion -> Jurisdiction -> Extraction -> Retrieval -> Reasoning -> Remediation -> Risk Scoring
+    3. Returns structured compliance report
     """
     try:
-        logger.info("Starting compliance check request via multi-agent pipeline")
+        logger.info("Starting compliance check request via ComplianceOrchestrator")
         
         contract_text = request.contract_text
         jurisdiction = request.jurisdiction or "United States"
@@ -52,29 +48,50 @@ async def check_compliance_endpoint(request: ComplianceCheckRequest):
                 detail="Contract text too short (minimum 50 characters)"
             )
         
-        # Run compliance pipeline (clause_agent → compliance_agent → risk_agent)
-        result = await run_compliance_pipeline(contract_text, jurisdiction)
-        compliance_report = result.get("compliance_report", [])
-        summary = result.get("summary")
+        # Run Agentic Pipeline
+        from app.agents.compliance import ComplianceOrchestrator
+        orchestrator = ComplianceOrchestrator()
+        
+        metadata = {
+            "jurisdiction": jurisdiction,
+            "request_source": "api"
+        }
+        
+        final_state = await orchestrator.run(raw_text=contract_text, metadata=metadata)
+        
+        # Map findings to response format
+        compliance_report = []
+        for clause_id, finding in final_state.compliance_findings.items():
+            # Find the clause text
+            clause_text = next((c["text"] for c in final_state.clauses if c["id"] == clause_id), "")
+            
+            compliance_report.append(ComplianceIssue(
+                clause_id=clause_id,
+                text=clause_text,
+                status=finding.get("status", "unknown"),
+                reason=finding.get("reason", "No reason provided"),
+                risk_level=finding.get("risk_level", "low"),
+                recommendation=finding.get("suggested_fix", "")
+            ))
 
-        if not summary:
-            high_count = sum(1 for issue in compliance_report if issue.get("risk_level") == "high")
-            medium_count = sum(1 for issue in compliance_report if issue.get("risk_level") == "medium")
-            low_count = sum(1 for issue in compliance_report if issue.get("risk_level") == "low")
-            summary = {
-                "total_clauses": len(compliance_report),
-                "high_risk": high_count,
-                "medium_risk": medium_count,
-                "low_risk": low_count,
-                "overall_assessment": "CRITICAL" if high_count > 0 else "REVIEW NEEDED" if medium_count > 0 else "ACCEPTABLE"
-            }
+        summary = final_state.risk_summary
+        
+        # If risk summary is empty/basic, ensure it has the required fields
+        if not summary.get("overall_score"):
+             # Fallback logic if agent didn't populate it fully (e.g. error)
+             high_count = sum(1 for issue in compliance_report if issue.risk_level == "high")
+             summary = {
+                "overall_score": 100 - (high_count * 10),
+                "risk_level": "High" if high_count > 0 else "Low",
+                 "breakdown": {"high": high_count}
+             }
 
         response = ComplianceCheckResponse(
-            drafted_contract=result.get("drafted_contract", contract_text),
-            compliance_report=[ComplianceIssue(**issue) for issue in compliance_report],
+            drafted_contract=final_state.final_contract or contract_text,
+            compliance_report=compliance_report,
             summary=summary,
-            insights=result.get("insights"),
-            report_markdown=result.get("report_markdown")
+            insights=[log.get("details") for log in final_state.audit_log if log.get("action") == "Analyze"], # simplistic mapping
+            report_markdown=f"# Compliance Report\n\nOverall Risk: {summary.get('risk_level')}\n\n..." # placeholder for full markdown generation
         )
         
         logger.info(f"Compliance check completed: {len(compliance_report)} issues found")

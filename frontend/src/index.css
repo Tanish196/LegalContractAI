@@ -253,6 +253,51 @@
   .dark .neon-box:hover {
     @apply border-[hsl(var(--highlight))/0.5] shadow-[0_0_20px_rgba(33,150,243,0.3)];
   }
+
+  /* Legal Document Styles (Word-like) */
+  .legal-document h1 {
+    @apply text-balance text-center text-2xl font-bold mb-8 uppercase tracking-wide;
+    font-family: 'Georgia', 'Times New Roman', serif;
+  }
+  
+  .legal-document h2 {
+    @apply text-xl font-bold mt-10 mb-4 border-b pb-2;
+    font-family: 'Georgia', 'Times New Roman', serif;
+  }
+  
+  .legal-document h3 {
+    @apply text-lg font-bold mt-6 mb-2;
+    font-family: 'Georgia', 'Times New Roman', serif;
+  }
+  
+  .legal-document p {
+    @apply mb-4 leading-relaxed text-justify;
+    text-indent: 0;
+  }
+  
+  .legal-document ul, .legal-document ol {
+    @apply mb-6 ml-8 space-y-2;
+  }
+  
+  .legal-document li {
+    @apply leading-relaxed;
+  }
+
+  .legal-document blockquote {
+    @apply border-l-4 border-primary/20 pl-4 py-1 italic mb-6 bg-muted/30;
+  }
+
+  .legal-document table {
+    @apply w-full border-collapse mb-8;
+  }
+
+  .legal-document th, .legal-document td {
+    @apply border border-border p-3 text-left;
+  }
+
+  .legal-document th {
+    @apply bg-muted/50 font-bold;
+  }
 }
 
 @layer utilities {

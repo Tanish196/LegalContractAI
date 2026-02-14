@@ -45,7 +45,7 @@ const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container-tight h-16 flex items-center justify-between">
-  <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
+        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white dark:bg-[hsl(var(--highlight))]">
             <GavelIcon className="h-5 w-5" />
           </div>
@@ -60,52 +60,66 @@ const Header: React.FC = () => {
                   <NavigationMenuTrigger className="h-10 text-base font-medium">Services</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <div className="grid grid-cols-2 gap-2 p-4 w-[400px]">
-                      <Link 
-                        to="/case-summary" 
+                      <Link
+                        to="/case-summary"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
                         <div className="font-medium text-sm mb-1">Case Summarization</div>
                         <p className="text-xs text-muted-foreground">Generate concise summaries</p>
                       </Link>
-                      <Link 
-                        to="/loophole-detection" 
+                      <Link
+                        to="/loophole-detection"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
                         <div className="font-medium text-sm mb-1">Loophole Detection</div>
                         <p className="text-xs text-muted-foreground">Identify legal risks</p>
                       </Link>
-                      <Link 
-                        to="/clause-classification" 
+                      <Link
+                        to="/clause-classification"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
                         <div className="font-medium text-sm mb-1">Clause Classification</div>
                         <p className="text-xs text-muted-foreground">Analyze clauses</p>
                       </Link>
-                      <Link 
-                        to="/compliance-check" 
+                      <Link
+                        to="/compliance-check"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
                         <div className="font-medium text-sm mb-1">Compliance Checker</div>
                         <p className="text-xs text-muted-foreground">Check documents for compliance</p>
                       </Link>
-                      <Link 
-                        to="/contract-drafting" 
+                      <Link
+                        to="/contract-drafting"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
                         <div className="font-medium text-sm mb-1">Contract Drafting</div>
                         <p className="text-xs text-muted-foreground">Create contracts with AI</p>
+                      </Link>
+                      <Link
+                        to="/legal-research"
+                        className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
+                      >
+                        <div className="font-medium text-sm mb-1">Legal Research</div>
+                        <p className="text-xs text-muted-foreground">Find case law & statutes</p>
+                      </Link>
+                      <Link
+                        to="/chat-assistant"
+                        className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
+                      >
+                        <div className="font-medium text-sm mb-1">AI Assistant</div>
+                        <p className="text-xs text-muted-foreground">Chat with LegalAssist</p>
                       </Link>
                     </div>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link 
+                  <Link
                     to="/about"
                     className={cn(
                       "h-10 px-4 flex items-center text-base font-medium rounded-md transition-colors",
-                      location.pathname === "/about" 
-                        ? "text-primary dark:text-[hsl(var(--highlight))]" 
+                      location.pathname === "/about"
+                        ? "text-primary dark:text-[hsl(var(--highlight))]"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -114,12 +128,12 @@ const Header: React.FC = () => {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link 
+                  <Link
                     to="/pricing"
                     className={cn(
                       "h-10 px-4 flex items-center text-base font-medium rounded-md transition-colors",
-                      location.pathname === "/pricing" 
-                        ? "text-primary dark:text-[hsl(var(--highlight))]" 
+                      location.pathname === "/pricing"
+                        ? "text-primary dark:text-[hsl(var(--highlight))]"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -128,12 +142,12 @@ const Header: React.FC = () => {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link 
+                  <Link
                     to="/contact"
                     className={cn(
                       "h-10 px-4 flex items-center text-base font-medium rounded-md transition-colors",
-                      location.pathname === "/contact" 
-                        ? "text-primary dark:text-[hsl(var(--highlight))]" 
+                      location.pathname === "/contact"
+                        ? "text-primary dark:text-[hsl(var(--highlight))]"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -146,7 +160,7 @@ const Header: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            
+
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -230,11 +244,17 @@ const Header: React.FC = () => {
                         <Link to="/clause-classification" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
                           Clause Classification
                         </Link>
-                            <Link to="/compliance-check" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
-                              Compliance Checker
-                            </Link>
+                        <Link to="/compliance-check" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                          Compliance Checker
+                        </Link>
                         <Link to="/contract-drafting" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
                           Contract Drafting
+                        </Link>
+                        <Link to="/legal-research" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                          Legal Research
+                        </Link>
+                        <Link to="/chat-assistant" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                          AI Assistant
                         </Link>
                       </div>
                     </div>

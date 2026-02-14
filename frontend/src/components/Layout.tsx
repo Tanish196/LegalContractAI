@@ -7,11 +7,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen legal-pattern-bg">
       <Header />
-      
+
       <main className="flex-1 relative overflow-hidden">
         {children || <Outlet />}
       </main>
-      
+
       <footer className="border-t border-border/40 py-8 relative overflow-hidden mt-auto">
         <div className="absolute inset-0 legal-bg-overlay bg-legal-pattern opacity-5"></div>
         <div className="container-tight relative z-10">
@@ -29,7 +29,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 AI-powered legal assistant to help with your legal tasks.
               </p>
             </div>
-            
+
             <div>
               <h3 className="font-medium mb-4 dark:text-[hsl(var(--highlight))] dark:text-shadow-sm">Services</h3>
               <ul className="space-y-3">
@@ -53,9 +53,19 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                     Contract Drafting
                   </Link>
                 </li>
+                <li>
+                  <Link to="/legal-research" className="text-sm text-muted-foreground hover:text-primary transition-colors dark:hover:text-[hsl(var(--highlight))] dark:hover:text-shadow-sm">
+                    Legal Research
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/chat-assistant" className="text-sm text-muted-foreground hover:text-primary transition-colors dark:hover:text-[hsl(var(--highlight))] dark:hover:text-shadow-sm">
+                    AI Assistant
+                  </Link>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-medium mb-4 dark:text-[hsl(var(--highlight))] dark:text-shadow-sm">Company</h3>
               <ul className="space-y-3">
@@ -81,7 +91,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 </li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-medium mb-4 dark:text-[hsl(var(--highlight))] dark:text-shadow-sm">Legal</h3>
               <ul className="space-y-3">
@@ -103,7 +113,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               </ul>
             </div>
           </div>
-          
+
           <div className="mt-8 pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} LegalAssist. All rights reserved.

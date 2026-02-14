@@ -4,8 +4,9 @@ import json
 import logging
 from typing import Dict, Any, List, Optional
 
+
 from app.agents import clause_agent, compliance_agent, risk_agent
-from app.llms import get_gemini_client
+from app.llms import get_llm_client
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,8 @@ async def check_compliance(contract_text: str, jurisdiction: str = "United State
             }
 
         # Get LLM client for compliance analysis
-        llm_client = get_gemini_client()
+
+        llm_client = get_llm_client()
 
         compliance_report: List[Dict[str, Any]] = []
         suggested_language: List[Dict[str, str]] = []

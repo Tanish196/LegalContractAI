@@ -11,7 +11,15 @@ const ComplianceCheck = () => {
     triggerOnce: true,
     threshold: 0.1,
   });
-  
+
+  const [standards, setStandards] = React.useState<string[]>(['gdpr']);
+
+  const handleCheckboxChange = (id: string, checked: boolean) => {
+    setStandards(prev =>
+      checked ? [...prev, id] : prev.filter(s => s !== id)
+    );
+  };
+
   const additionalFields = (
     <Card className="border border-border/60 p-6 mt-6 rounded-lg card-shadow">
       <div className="space-y-4">
@@ -19,27 +27,51 @@ const ComplianceCheck = () => {
           <Label className="text-base font-medium">Compliance Standards</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <div className="flex items-center space-x-2">
-              <Checkbox id="gdpr" defaultChecked />
+              <Checkbox
+                id="gdpr"
+                checked={standards.includes('gdpr')}
+                onCheckedChange={(checked) => handleCheckboxChange('gdpr', checked as boolean)}
+              />
               <Label htmlFor="gdpr" className="font-normal">GDPR</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="hipaa" />
+              <Checkbox
+                id="hipaa"
+                checked={standards.includes('hipaa')}
+                onCheckedChange={(checked) => handleCheckboxChange('hipaa', checked as boolean)}
+              />
               <Label htmlFor="hipaa" className="font-normal">HIPAA</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="ccpa" />
+              <Checkbox
+                id="ccpa"
+                checked={standards.includes('ccpa')}
+                onCheckedChange={(checked) => handleCheckboxChange('ccpa', checked as boolean)}
+              />
               <Label htmlFor="ccpa" className="font-normal">CCPA</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="ferpa" />
+              <Checkbox
+                id="ferpa"
+                checked={standards.includes('ferpa')}
+                onCheckedChange={(checked) => handleCheckboxChange('ferpa', checked as boolean)}
+              />
               <Label htmlFor="ferpa" className="font-normal">FERPA</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="glba" />
+              <Checkbox
+                id="glba"
+                checked={standards.includes('glba')}
+                onCheckedChange={(checked) => handleCheckboxChange('glba', checked as boolean)}
+              />
               <Label htmlFor="glba" className="font-normal">GLBA</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="sox" />
+              <Checkbox
+                id="sox"
+                checked={standards.includes('sox')}
+                onCheckedChange={(checked) => handleCheckboxChange('sox', checked as boolean)}
+              />
               <Label htmlFor="sox" className="font-normal">SOX</Label>
             </div>
           </div>
@@ -47,19 +79,20 @@ const ComplianceCheck = () => {
       </div>
     </Card>
   );
-  
+
   return (
     <div className="container-tight py-16" ref={ref}>
       <div className={cn(
         "transition-all duration-500",
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       )}>
-        <AIForm 
+        <AIForm
           title="Compliance Check"
           description="Ensure your legal documents comply with relevant laws and regulations."
           placeholder="Paste your document here for compliance analysis..."
           taskType="compliance-check"
           additionalFields={additionalFields}
+          additionalData={{ standards }}
         />
       </div>
     </div>

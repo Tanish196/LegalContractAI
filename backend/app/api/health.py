@@ -36,9 +36,10 @@ async def health_check():
         logger.error(f"Failed to load agents: {str(e)}")
     
     try:
+
         # Check if LLM client is available
-        from app.llms import get_gemini_client
-        client = get_gemini_client()
+        from app.llms import get_llm_client
+        client = get_llm_client()
         llm_available = True
     except Exception as e:
         logger.error(f"Failed to load LLM client: {str(e)}")
