@@ -10,7 +10,12 @@ import { marked } from 'marked';
 
 const serviceTypeLabels: Record<string, string> = {
   contract_draft: 'Contract Drafting',
-  compliance_check: 'Compliance Check'
+  compliance_check: 'Compliance Check',
+  case_summary: 'Case Summarization',
+  loophole_detection: 'Loophole Detection',
+  clause_classification: 'Clause Classification',
+  legal_research: 'Legal Research',
+  chat_assistant: 'AI Advisor Chat'
 };
 
 export function RecentActivity() {
@@ -27,7 +32,7 @@ export function RecentActivity() {
   useEffect(() => {
     async function loadActivity() {
       if (!user) return;
-      
+
       try {
         const items = await getRecentActivity(user.id, 10);
         setActivities(items);
@@ -57,7 +62,7 @@ export function RecentActivity() {
           View All
         </Button>
       </div>
-      
+
       <ScrollArea className="h-[250px]">
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">

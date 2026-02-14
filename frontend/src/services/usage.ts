@@ -5,10 +5,11 @@ import { ServiceType, TaskType } from '@/types/ai';
 const taskToServiceType: Record<TaskType, ServiceType> = {
   'contract-drafting': 'contract_draft',
   'compliance-check': 'compliance_check',
-  // These will be logged as contract_draft for now since they're contract-related
-  'case-summary': 'contract_draft',
-  'loophole-detection': 'contract_draft',
-  'clause-classification': 'contract_draft'
+  'case-summary': 'case_summary',
+  'loophole-detection': 'loophole_detection',
+  'clause-classification': 'clause_classification',
+  'legal-research': 'legal_research',
+  'chat-assistant': 'chat_assistant'
 };
 
 export interface UsageHistoryItem {
@@ -21,13 +22,13 @@ export interface UsageHistoryItem {
 }
 
 export async function recordUsage(
-  userId: string, 
-  taskType: TaskType, 
-  promptTitle?: string, 
+  userId: string,
+  taskType: TaskType,
+  promptTitle?: string,
   promptOutput?: string
 ): Promise<void> {
   const serviceType = taskToServiceType[taskType];
-  
+
   try {
     const { error } = await supabase
       .from('usage_history')
@@ -75,7 +76,7 @@ export async function getUserCredits(userId: string): Promise<CreditInfo> {
 
     const totalCredits = userData?.total_credits || 1000; // Default to 1000 if not set
     const used = usedCredits || 0;
-    
+
     return {
       used,
       total: totalCredits,
