@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
-import { FileText, FileCheck, Search, PenSquare, ArrowRight, Shield } from "lucide-react";
+import { FileText, FileCheck, Search, PenSquare, ArrowRight, Shield, MessageSquare } from "lucide-react";
 
 const Features: React.FC = () => {
   const features = [
@@ -46,14 +46,30 @@ const Features: React.FC = () => {
       icon: Shield,
       path: "/compliance-check",
       color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+    },
+    {
+      id: "legal-research",
+      title: "Legal Research",
+      description: "Search for case law, statutes, and legal precedents with advanced AI agents.",
+      icon: Search,
+      path: "/legal-research",
+      color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+    },
+    {
+      id: "chat-assistant",
+      title: "AI Advisor",
+      description: "Get real-time guidance on platform tools and legal drafting concepts.",
+      icon: MessageSquare,
+      path: "/chat-assistant",
+      color: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
     }
   ];
-  
+
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
-  
+
   return (
     <div id="features" className="py-24 relative" ref={ref}>
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -72,16 +88,16 @@ const Features: React.FC = () => {
             Advanced AI tools to enhance legal document analysis, drafting, and risk assessment.
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
-            <div 
-              key={feature.id} 
+            <div
+              key={feature.id}
               className={cn(
                 "rounded-xl p-6 transition-all duration-500 bg-card border border-border/50 card-shadow card-hover",
                 inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8",
               )}
-              style={{ 
+              style={{
                 transitionDelay: `${(index + 1) * 100}ms`,
               }}
             >
@@ -90,8 +106,8 @@ const Features: React.FC = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
               <p className="text-muted-foreground mb-4">{feature.description}</p>
-              <Link 
-                to={feature.path} 
+              <Link
+                to={feature.path}
                 className="inline-flex items-center text-sm font-medium text-[hsl(var(--highlight))] hover:underline group"
               >
                 Try Now

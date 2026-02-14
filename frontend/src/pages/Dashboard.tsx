@@ -1,14 +1,14 @@
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Search, CheckCircle, PenSquare, Shield } from "lucide-react";
+import { FileText, Search, CheckCircle, PenSquare, Shield, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { RecentActivity } from "@/components/RecentActivity";
 import { AICredits } from "@/components/AICredits";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  
+
   const features = [
     {
       id: "case-summary",
@@ -49,6 +49,22 @@ const Dashboard = () => {
       icon: Shield,
       path: "/compliance-check",
       color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
+    },
+    {
+      id: "legal-research",
+      title: "Legal Research",
+      description: "Search for case law and statutes",
+      icon: Search,
+      path: "/legal-research",
+      color: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+    },
+    {
+      id: "chat-assistant",
+      title: "AI Advisor Chat",
+      description: "Chat with our legal advisor",
+      icon: MessageSquare,
+      path: "/chat-assistant",
+      color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
     }
   ];
 
@@ -58,7 +74,7 @@ const Dashboard = () => {
         <h1 className="heading-2 mb-2">Welcome back, {user?.user_metadata.full_name || 'User'}</h1>
         <p className="text-muted-foreground">Access our AI-powered legal tools</p>
       </div>
-      
+
       <div className="space-y-8">
         <div className="grid gap-4 md:grid-cols-2">
           {features.map((feature) => (

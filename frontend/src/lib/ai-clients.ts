@@ -1,4 +1,5 @@
 import { TaskType } from '@/types/ai';
+import { supabase } from './supabase';
 
 interface AIResponse {
   data: string | null;
@@ -97,10 +98,23 @@ export const aiClient = {
   async process(taskType: TaskType, content: string, options?: Record<string, any>): Promise<AIResponse> {
     try {
       const route = ROUTES[taskType] ?? defaultReportRoute(taskType);
+
+      // Fetch provider from session if not explicitly provided
+      let provider = options?.provider;
+      if (!provider) {
+        const { data: { session } } = await supabase.auth.getSession();
+        provider = session?.user?.user_metadata?.llm_provider || 'openai';
+      }
+
+      const payload = {
+        ...route.buildPayload(content, options),
+        provider
+      };
+
       const response = await fetch(`${API_BASE_URL}${route.path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(route.buildPayload(content, options))
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -108,8 +122,8 @@ export const aiClient = {
         throw new Error(detail || `Backend request failed with status ${response.status}`);
       }
 
-      const payload = route.expects === 'text' ? await response.text() : await response.json();
-      const { result, metadata } = route.transform(payload);
+      const data = route.expects === 'text' ? await response.text() : await response.json();
+      const { result, metadata } = route.transform(data);
 
       return { data: result, error: null, metadata: metadata ?? null };
     } catch (error) {
