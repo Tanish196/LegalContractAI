@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,7 +163,9 @@ const Profile = () => {
               <p className="text-xs text-muted-foreground">
                 Current usage is {creditPercentage}%. Credits reset on the 1st of every month.
               </p>
-              <Button variant="link" className="p-0 h-auto text-primary text-xs">Upgrade Plan</Button>
+              <Link to="/pricing">
+                <Button variant="link" className="p-0 h-auto text-primary text-xs">Upgrade Plan</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

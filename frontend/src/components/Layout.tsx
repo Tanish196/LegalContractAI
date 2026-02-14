@@ -55,7 +55,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 </li>
                 <li>
                   <Link to="/legal-research" className="text-sm text-muted-foreground hover:text-primary transition-colors dark:hover:text-[hsl(var(--highlight))] dark:hover:text-shadow-sm">
-                    Legal Research
+                    Legal Research (BETA)
                   </Link>
                 </li>
                 <li>

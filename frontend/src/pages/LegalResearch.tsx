@@ -16,7 +16,7 @@ const LegalResearch = () => {
                 inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             )}>
                 <AIForm
-                    title="Legal Research"
+                    title="Legal Research (BETA)"
                     description="Ask complex legal questions and get answers backed by statutes and case law."
                     placeholder="e.g. What are the penalties for data breach under the DPDP Act 2023?"
                     taskType="legal-research"

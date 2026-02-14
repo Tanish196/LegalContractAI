@@ -24,7 +24,8 @@ const Dashboard = () => {
       description: "Identify legal risks",
       icon: Search,
       path: "/loophole-detection",
-      color: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+      color: "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300",
+      isBeta: true
     },
     {
       id: "clause-classification",
@@ -56,7 +57,8 @@ const Dashboard = () => {
       description: "Search for case law and statutes",
       icon: Search,
       path: "/legal-research",
-      color: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+      color: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
+      isBeta: true
     },
     {
       id: "chat-assistant",
@@ -84,7 +86,14 @@ const Dashboard = () => {
                   <div className={`w-12 h-12 rounded-lg mb-4 flex items-center justify-center ${feature.color}`}>
                     <feature.icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold">{feature.title}</h3>
+                    {(feature as any).isBeta && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-highlight/10 text-highlight border border-highlight/20 rounded uppercase tracking-wider">
+                        Beta
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </CardContent>
               </Card>

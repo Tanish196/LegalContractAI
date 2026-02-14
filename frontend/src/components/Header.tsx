@@ -71,7 +71,7 @@ const Header: React.FC = () => {
                         to="/loophole-detection"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
-                        <div className="font-medium text-sm mb-1">Loophole Detection</div>
+                        <div className="font-medium text-sm mb-1">Loophole Detection (BETA)</div>
                         <p className="text-xs text-muted-foreground">Identify legal risks</p>
                       </Link>
                       <Link
@@ -99,7 +99,7 @@ const Header: React.FC = () => {
                         to="/legal-research"
                         className="block rounded-md p-3 hover:bg-accent dark:hover:bg-accent/30 transition-colors"
                       >
-                        <div className="font-medium text-sm mb-1">Legal Research</div>
+                        <div className="font-medium text-sm mb-1">Legal Research (BETA)</div>
                         <p className="text-xs text-muted-foreground">Find case law & statutes</p>
                       </Link>
                       <Link
@@ -239,7 +239,7 @@ const Header: React.FC = () => {
                           Case Summarization
                         </Link>
                         <Link to="/loophole-detection" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
-                          Loophole Detection
+                          Loophole Detection (BETA)
                         </Link>
                         <Link to="/clause-classification" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
                           Clause Classification
@@ -251,7 +251,7 @@ const Header: React.FC = () => {
                           Contract Drafting
                         </Link>
                         <Link to="/legal-research" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
-                          Legal Research
+                          Legal Research (BETA)
                         </Link>
                         <Link to="/chat-assistant" className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
                           AI Assistant

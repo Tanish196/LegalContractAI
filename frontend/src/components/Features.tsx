@@ -53,7 +53,8 @@ const Features: React.FC = () => {
       description: "Search for case law, statutes, and legal precedents with advanced AI agents.",
       icon: Search,
       path: "/legal-research",
-      color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+      color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300",
+      isBeta: true
     },
     {
       id: "chat-assistant",
