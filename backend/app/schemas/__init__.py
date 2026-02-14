@@ -57,6 +57,7 @@ class ChatResponse(BaseModel):
     reply: str
     intent: str
     suggested_action: Optional[str] = None
+    citations: Optional[List[Citation]] = None
 
 
 # ============================================================================

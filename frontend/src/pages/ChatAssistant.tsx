@@ -13,6 +13,11 @@ interface Message {
     content: string;
     intent?: string;
     suggested_action?: string;
+    citations?: {
+        title: string;
+        source: string;
+        text: string;
+    }[];
 }
 
 const ChatAssistant = () => {
@@ -39,22 +44,21 @@ const ChatAssistant = () => {
         setIsLoading(true);
 
         try {
-            // Use the 'chat-assistant' task type directly
             const response = await aiClient.process('chat-assistant', userMsg);
 
             if (response.error) throw response.error;
 
-            // The transform in ai-clients.ts returns result (reply) and metadata (whole payload)
-            // payload has intent and suggested_action
             const reply = response.data || "I'm sorry, I couldn't process that.";
             const intent = response.metadata?.intent;
             const action = (response.metadata as any)?.suggested_action;
+            const citations = (response.metadata as any)?.citations;
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: reply,
                 intent,
-                suggested_action: action
+                suggested_action: action,
+                citations: citations
             }]);
         } catch (error) {
             console.error("Chat Error:", error);
@@ -94,6 +98,21 @@ const ChatAssistant = () => {
                                         : "bg-muted/50 border rounded-tl-sm"
                                 )}>
                                     <p className="whitespace-pre-wrap">{msg.content}</p>
+
+                                    {msg.citations && msg.citations.length > 0 && (
+                                        <div className="mt-4 pt-3 border-t border-border/20 space-y-3">
+                                            <p className="text-[10px] uppercase tracking-wider font-bold opacity-50">Legal Citations:</p>
+                                            <div className="grid gap-2">
+                                                {msg.citations.map((cite, cIdx) => (
+                                                    <div key={cIdx} className="bg-background/50 p-2 rounded border border-border/10 text-[11px]">
+                                                        <div className="font-semibold text-primary/80 mb-1">{cite.title}</div>
+                                                        <div className="opacity-70 line-clamp-2 italic">"{cite.text}"</div>
+                                                        <div className="mt-1 text-[9px] opacity-40">Source: {cite.source}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {msg.suggested_action && (
                                         <div className="mt-3 pt-3 border-t border-border/20">
