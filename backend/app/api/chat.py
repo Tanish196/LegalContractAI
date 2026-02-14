@@ -47,18 +47,21 @@ async def chat_assistant(request: ChatRequest):
         prompt = PromptTemplate.from_template(
             """You are a helpful Legal Contract AI Assistant. Your goal is to guide the user to the right tools or answer general questions.
             
-            Available Tools:
-            - "drafting": For creating new contracts or clauses.
-            - "compliance": For reviewing contracts against laws/policies.
-            - "research": For finding case law and statutes.
-            - "general_query": For general questions or greetings.
+            Available Tools and their Routes:
+            - "drafting": For creating new contracts or clauses from requirements. Route: "/contract-drafting"
+            - "compliance": For reviewing existing contracts against laws/policies. Route: "/compliance-check"
+            - "research": For finding case law, statutes and legal precedents. Route: "/legal-research"
+            - "summarization": For summarizing long legal case texts or documents. Route: "/case-summary"
+            - "loopholes": For identifying legal risks and vulnerabilities. Route: "/loophole-detection"
+            - "classification": For categorizing and analyzing specific clauses. Route: "/clause-classification"
+            - "general_query": For greetings, general questions, or platform info. Route: null
             
             User Message: {message}
             
             Return a JSON object with:
-            - "intent": One of [drafting, compliance, research, general_query]
-            - "reply": A helpful response to the user, suggesting the appropriate tool if applicable.
-            - "suggested_action": null, or one of ["/contract-drafting", "/compliance-check", "/legal-research"] corresponding to the intent.
+            - "intent": One of [drafting, compliance, research, summarization, loopholes, classification, general_query]
+            - "reply": A helpful response to the user, suggesting the appropriate tool if applicable. Mention the tool by its name.
+            - "suggested_action": The exact Route string mentioned above (including the leading slash) corresponding to the intent, or null if general_query.
             """
         )
         
