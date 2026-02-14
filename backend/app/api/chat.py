@@ -85,7 +85,7 @@ async def chat_assistant(request: ChatRequest):
                 suggested_action=None
             )
 
-        client = get_llm_client(request.provider if hasattr(request, 'provider') else None)
+        client = get_llm_client(request.provider if hasattr(request, 'provider') else None, use_fast=True)
         llm = client.chat_model
 
         # Define the Agent

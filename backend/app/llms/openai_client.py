@@ -134,11 +134,12 @@ Generate a complete, professional contract in Markdown format."""
 # Global client instance
 _openai_client: Optional[OpenAIClient] = None
 
-def get_openai_client() -> OpenAIClient:
+def get_openai_client(model: Optional[str] = None) -> OpenAIClient:
     """
     Get or create singleton OpenAI client instance.
     """
     global _openai_client
-    if _openai_client is None:
-        _openai_client = OpenAIClient()
+    if _openai_client is None or (model and _openai_client.model != model):
+        # We allow creating a new instance if a specific model is requested
+        return OpenAIClient(model=model)
     return _openai_client

@@ -253,11 +253,11 @@ Generate a complete, professional contract in Markdown format."""
 _gemini_client: Optional[GeminiClient] = None
 
 
-def get_gemini_client() -> GeminiClient:
+def get_gemini_client(model: Optional[str] = None) -> GeminiClient:
     """
     Get or create singleton Gemini client instance.
     """
     global _gemini_client
-    if _gemini_client is None:
-        _gemini_client = GeminiClient()
+    if _gemini_client is None or (model and _gemini_client.model != model):
+        return GeminiClient(model=model)
     return _gemini_client
