@@ -39,6 +39,13 @@ class HybridLLMClient:
         except Exception:
              logger.warning("HybridClient: Gemini client not available (missing key?)")
 
+    @property
+    def chat_model(self):
+        """Return a LangChain-compatible ChatOpenAI model for agent use."""
+        if self.openai_client and hasattr(self.openai_client, 'chat_model'):
+            return self.openai_client.chat_model
+        raise AttributeError("No LangChain-compatible chat model available. OpenAI client is not configured.")
+
     async def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 4096) -> str:
         """
         Generate text with fallback.

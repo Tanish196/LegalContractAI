@@ -38,7 +38,9 @@ async def summarize_case(request: CaseSummaryRequest):
                 citations=["Section 73", "Hadley v Baxendale"]
             )
 
-        llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        from app.llms import get_llm_client
+        client = get_llm_client()
+        llm = client.chat_model
         
         parser = JsonOutputParser(pydantic_object=CaseSummaryOutput)
 

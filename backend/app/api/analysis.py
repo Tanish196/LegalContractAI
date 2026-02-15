@@ -57,8 +57,10 @@ async def analyze_clauses(request: ClauseAnalysisRequest):
             logger.warning(f"RAG retrieval failed: {e}. Proceeding without context.")
             rag_context = "\n(RAG System Unavailable) Evaluate based on general legal principles.\n"
 
-        # 2. Analyze with LLM
-        llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        # 2. Analyze with LLM (uses hybrid client for fallback)
+        from app.llms import get_llm_client
+        client = get_llm_client()
+        llm = client.chat_model
         
         parser = JsonOutputParser(pydantic_object=ClauseAnalysisResponse)
 

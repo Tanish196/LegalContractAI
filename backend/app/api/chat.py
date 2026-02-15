@@ -106,9 +106,45 @@ async def chat_assistant(request: ChatRequest):
             )
 
         client = get_llm_client(request.provider if hasattr(request, 'provider') else None, use_fast=True)
-        llm = client.chat_model
+        
+        # Try LangChain agent path (requires OpenAI chat_model)
+        try:
+            llm = client.chat_model
+        except AttributeError:
+            # Fallback: use hybrid generate() for non-OpenAI providers
+            logger.info("chat_model not available, using generate() fallback")
+            fallback_prompt = f"""You are a highly intelligent Indian Legal AI Advisor.
+Respond to the user's message helpfully and concisely.
+Return a JSON object: {{"reply": "...", "intent": "general", "suggested_action": null, "citations": null}}
 
-        # Define the Agent
+User message: {user_message}"""
+            raw_output = await client.generate(fallback_prompt, temperature=0.3)
+            try:
+                import re as _re
+                _match = _re.search(r'(\{.*\})', raw_output, _re.DOTALL)
+                if _match:
+                    result = json.loads(_match.group(1))
+                else:
+                    result = {"reply": raw_output, "intent": "general", "suggested_action": None, "citations": None}
+            except Exception:
+                result = {"reply": raw_output, "intent": "general", "suggested_action": None, "citations": None}
+            
+            final_reply = result.get("reply", raw_output)
+            if user_id:
+                try:
+                    enc_assistant_msg = encryption_service.encrypt(final_reply)
+                    db_service.store_chat_message(user_id, encrypted_data=enc_assistant_msg)
+                except Exception as e:
+                    logger.error(f"Failed to store encrypted assistant reply: {e}")
+            
+            return ChatResponse(
+                reply=final_reply,
+                intent=result.get("intent", "general"),
+                suggested_action=result.get("suggested_action"),
+                citations=None
+            )
+
+        # Define the Agent (OpenAI path)
         tools = [get_legal_context, get_platform_navigation]
         
         prompt = ChatPromptTemplate.from_messages([

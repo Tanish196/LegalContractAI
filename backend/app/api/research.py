@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from app.schemas import LegalResearchRequest, LegalResearchResponse, Citation, ErrorResponse
 from app.RAG.pinecone_store import pinecone_service
 from app.config import INDEX_STATUTES, INDEX_CASES, INDEX_REGULATIONS, OPENAI_API_KEY
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import logging
@@ -71,7 +70,9 @@ async def legal_research(request: LegalResearchRequest):
                 citations=citations
             )
 
-        llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        from app.llms import get_llm_client
+        client = get_llm_client()
+        llm = client.chat_model
         
         prompt = PromptTemplate.from_template(
             """You are an expert Indian legal research assistant. Use the provided context to answer the user's query comprehensively.

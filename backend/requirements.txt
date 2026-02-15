@@ -7,12 +7,12 @@ python-multipart==0.0.6
 gunicorn
 
 # HTTP Client
-aiohttp==3.11.11
-httpx==0.25.2
+aiohttp>=3.9.0
+httpx>=0.24.0,<0.26.0
 
 # Data Validation
-pydantic==2.7.4
-pydantic-settings==2.3.4
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
 
 # Environment Variables
 python-dotenv==1.0.0
@@ -24,9 +24,9 @@ langchain-google-genai
 google-generativeai
 # langchain-huggingface
 # sentence-transformers==3.2.1  # Removed: using Pinecone server-side embeddings
-pinecone-client[grpc]>=3.2.2,<4.0.0
+pinecone-client[grpc]>=5.0.0
 
-langchain-pinecone>=0.1.0
+langchain-pinecone==0.2.0
 langchain-openai
 supabase==2.3.4
 
