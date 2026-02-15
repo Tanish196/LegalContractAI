@@ -1,32 +1,32 @@
-uv>=0.1.0
-
-# FastAPI and Server
+# Core Web Framework
 fastapi==0.115.4
 uvicorn[standard]==0.32.0
 python-multipart==0.0.6
-gunicorn
+gunicorn==21.2.0
 
-# HTTP Client
+# HTTP Clients
 aiohttp==3.11.11
-httpx==0.25.2
 
 # Data Validation
 pydantic==2.7.4
 pydantic-settings==2.3.4
 
-# Environment Variables
+# Environment
 python-dotenv==1.0.0
 
-# RAG + AI Tooling
-langchain
-langchain-community
-langchain-google-genai
-google-generativeai
-langchain-huggingface
-sentence-transformers==3.2.1
-pinecone-client[grpc]>=3.2.0
+# AI/LLM Providers
+openai==1.57.4
+google-generativeai>=0.3.0
 
-langchain-pinecone>=0.1.0
-langchain-openai
+# LangChain
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+langchain-google-genai==1.0.7
+
+# Vector Database
+pinecone-client>=3.0.0
+
+# Database & Security
 supabase==2.3.4
-
+cryptography>=41.0.0
