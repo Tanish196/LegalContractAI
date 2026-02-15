@@ -6,6 +6,7 @@ Main entry point for the backend API
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import CORS_ORIGINS
 from app.api import (
     drafting_router, compliance_router, health_router, reports_router,
     analysis_router, research_router, summarization_router, chat_router, usage_router
@@ -31,14 +32,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "http://localhost:5173",
-    "http://localhost:8080",  # ← Add this
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8080",  # ← Add this
-    "http://127.0.0.1:3000",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

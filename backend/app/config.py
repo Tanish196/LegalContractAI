@@ -20,6 +20,13 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHAT_ENCRYPTION_KEY_V1 = os.getenv("CHAT_ENCRYPTION_KEY_V1")
 
+# CORS Settings
+CORS_ORIGINS = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:8080,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:8080,http://127.0.0.1:3000"
+).split(",")
+CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS]
+
 # File Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PDF_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
