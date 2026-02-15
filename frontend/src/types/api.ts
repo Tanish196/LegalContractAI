@@ -16,7 +16,7 @@ export interface AIFormProps {
 export interface UsageHistoryItem {
   id: string;
   user_id: string;
-  service_type: 'contract_draft' | 'compliance_check';
+  service_type: 'contract_draft' | 'compliance_check' | 'case_summary' | 'loophole_detection' | 'clause_classification' | 'legal_research' ;
   created_at: string;
   prompt_title: string | null;
   prompt_output: string | null;

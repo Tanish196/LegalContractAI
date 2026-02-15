@@ -80,6 +80,40 @@ class RateLimiter:
                     logger.warning(f"RateLimiter: RPM limit reached ({self.rpm} rpm). Waiting {wait_time:.2f}s.")
                     await asyncio.sleep(wait_time)
 
+    async def try_acquire(self) -> bool:
+        """
+        Try to acquire a token immediately. Returns True if successful, False if rate limited.
+        Does NOT wait.
+        """
+        # 1. Check RPS (Spacing)
+        if self.rps > 0:
+            async with self.rps_lock:
+                now = time.monotonic()
+                elapsed = now - self.last_request_time
+                wait_time = self.rps_interval - elapsed
+                
+                if wait_time > 0:
+                    return False
+                
+        # 2. Check RPM (Token Bucket)
+        async with self.rpm_lock:
+            now = time.monotonic()
+            time_passed = now - self.rpm_updated_at
+            
+            refill_amount = (time_passed / self.rpm_period) * self.rpm
+            if refill_amount > 0:
+                self.rpm_tokens = min(self.rpm, self.rpm_tokens + refill_amount)
+                self.rpm_updated_at = now
+            
+            if self.rpm_tokens >= 1:
+                self.rpm_tokens -= 1
+                # Only update last_request_time if we successfully acquired logic token and passed RPS check
+                if self.rps > 0:
+                     self.last_request_time = time.monotonic()
+                return True
+            else:
+                return False
+
     async def __aenter__(self):
         await self.acquire()
 
