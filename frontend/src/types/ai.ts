@@ -16,4 +16,5 @@ export interface AIFormProps {
   taskType: TaskType;
   additionalFields?: React.ReactNode;
   additionalData?: Record<string, any>;
+  onReset?: () => void;
 }

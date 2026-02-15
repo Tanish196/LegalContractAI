@@ -19,6 +19,14 @@ const ContractDrafting = () => {
   const [partyB, setPartyB] = React.useState("");
   const [keyTerms, setKeyTerms] = React.useState("");
 
+  const handleReset = () => {
+    setContractType("service");
+    setJurisdiction("us");
+    setPartyA("");
+    setPartyB("");
+    setKeyTerms("");
+  };
+
   const additionalFields = (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -110,6 +118,7 @@ const ContractDrafting = () => {
             partyB,
             keyTerms
           }}
+          onReset={handleReset}
         />
       </div>
     </div>
