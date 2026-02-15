@@ -51,6 +51,7 @@ class CaseSummaryResponse(BaseModel):
 # --- Chat Assistant ---
 class ChatRequest(BaseModel):
     message: str
+    user_id: Optional[str] = None
     history: List[Dict[str, str]] = [] # [{"role": "user", "content": "..."}]
 
 class ChatResponse(BaseModel):

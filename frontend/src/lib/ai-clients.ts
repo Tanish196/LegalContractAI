@@ -89,7 +89,10 @@ const ROUTES: Record<TaskType, RouteConfig> = {
   'chat-assistant': {
     path: '/api/chat/chat-assistant',
     expects: 'json',
-    buildPayload: (content) => ({ message: content }),
+    buildPayload: (content, options) => ({
+      message: content,
+      user_id: options?.userId
+    }),
     transform: (payload) => ({ result: payload.reply, metadata: payload })
   }
 };
@@ -129,6 +132,17 @@ export const aiClient = {
     } catch (error) {
       console.error('AI Processing Error:', error);
       return { data: null, error: error instanceof Error ? error : new Error('Processing failed') };
+    }
+  },
+
+  async getHistory(userId: string): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/history?user_id=${userId}`);
+      if (!response.ok) throw new Error("Failed to fetch history");
+      return await response.json();
+    } catch (error) {
+      console.error("History Fetch Error:", error);
+      return [];
     }
   }
 };

@@ -41,6 +41,30 @@ const ChatAssistant = () => {
     };
 
     useEffect(() => {
+        const loadHistory = async () => {
+            if (user) {
+                const history = await aiClient.getHistory(user.id);
+                if (history && history.length > 0) {
+                    setMessages([
+                        {
+                            id: 'initial',
+                            role: 'assistant',
+                            content: "Hello! I'm your LegalAssist advisor. I can help you navigate our platform and find the right tools. How can I assist you today?"
+                        },
+                        ...history.map((m: any) => ({
+                            id: m.id,
+                            role: m.role,
+                            content: m.content,
+                            created_at: m.created_at
+                        }))
+                    ]);
+                }
+            }
+        };
+        loadHistory();
+    }, [user]);
+
+    useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
 
@@ -55,7 +79,7 @@ const ChatAssistant = () => {
         setIsLoading(true);
 
         try {
-            const response = await aiClient.process('chat-assistant', userMsg);
+            const response = await aiClient.process('chat-assistant', userMsg, { userId: user?.id });
 
             if (response.error) throw response.error;
 
@@ -75,16 +99,6 @@ const ChatAssistant = () => {
             };
 
             setMessages(prev => [...prev, assistantMsg]);
-
-            // Persist message to activity history if user is logged in
-            if (user) {
-                recordUsage(
-                    user.id,
-                    'chat-assistant',
-                    userMsg.substring(0, 50) + (userMsg.length > 50 ? '...' : ''),
-                    reply
-                ).catch(err => console.error("Failed to record chat usage:", err));
-            }
         } catch (error) {
             console.error("Chat Error:", error);
             setMessages(prev => [
