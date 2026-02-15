@@ -2,11 +2,13 @@ import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import { GavelIcon } from "lucide-react";
 import Header from "@/components/Header";
+import ChatBubble from "@/components/ChatBubble";
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen legal-pattern-bg">
       <Header />
+      <ChatBubble />
 
       <main className="flex-1 relative overflow-hidden">
         {children || <Outlet />}

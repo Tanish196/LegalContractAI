@@ -60,22 +60,69 @@ def get_platform_navigation(intent: str):
     Returns: The route string (e.g., '/contract-drafting') or None if no match.
     """
     routes = {
-        # Contract Drafting
+        # Contract Drafting — supports ALL contract types: NDA, employment, service, lease, partnership, etc.
         "drafting": "/contract-drafting",
         "contract-drafting": "/contract-drafting",
         "contract drafting": "/contract-drafting",
         "draft": "/contract-drafting",
         "contract": "/contract-drafting",
         "create contract": "/contract-drafting",
+        "nda": "/contract-drafting",
+        "non-disclosure agreement": "/contract-drafting",
+        "non disclosure agreement": "/contract-drafting",
+        "non disclosure": "/contract-drafting",
+        "confidentiality agreement": "/contract-drafting",
+        "employment agreement": "/contract-drafting",
+        "employment contract": "/contract-drafting",
+        "service agreement": "/contract-drafting",
+        "service contract": "/contract-drafting",
+        "lease agreement": "/contract-drafting",
+        "rental agreement": "/contract-drafting",
+        "partnership agreement": "/contract-drafting",
+        "partnership deed": "/contract-drafting",
+        "sale agreement": "/contract-drafting",
+        "sale deed": "/contract-drafting",
+        "vendor agreement": "/contract-drafting",
+        "freelance contract": "/contract-drafting",
+        "consulting agreement": "/contract-drafting",
+        "mou": "/contract-drafting",
+        "memorandum of understanding": "/contract-drafting",
+        "power of attorney": "/contract-drafting",
+        "will": "/contract-drafting",
+        "loan agreement": "/contract-drafting",
+        "franchise agreement": "/contract-drafting",
+        "joint venture agreement": "/contract-drafting",
+        "licensing agreement": "/contract-drafting",
+        "license agreement": "/contract-drafting",
+        "indemnity agreement": "/contract-drafting",
+        "indemnity bond": "/contract-drafting",
+        "affidavit": "/contract-drafting",
+        "letter of intent": "/contract-drafting",
+        "terms of service": "/contract-drafting",
+        "privacy policy": "/contract-drafting",
+        "shareholder agreement": "/contract-drafting",
+        "operating agreement": "/contract-drafting",
         # Compliance Check
         "compliance": "/compliance-check",
         "compliance-check": "/compliance-check",
         "compliance check": "/compliance-check",
         "check compliance": "/compliance-check",
+        "regulatory check": "/compliance-check",
+        "regulation check": "/compliance-check",
+        "legal compliance": "/compliance-check",
+        "compliance review": "/compliance-check",
+        "compliance audit": "/compliance-check",
         # Legal Research
         "research": "/legal-research",
         "legal-research": "/legal-research",
         "legal research": "/legal-research",
+        "case law": "/legal-research",
+        "statute": "/legal-research",
+        "statutes": "/legal-research",
+        "find law": "/legal-research",
+        "search law": "/legal-research",
+        "legal precedent": "/legal-research",
+        "section lookup": "/legal-research",
         # Case Summary
         "summarization": "/case-summary",
         "case-summary": "/case-summary",
@@ -83,17 +130,28 @@ def get_platform_navigation(intent: str):
         "summary": "/case-summary",
         "summarize": "/case-summary",
         "case summarization": "/case-summary",
+        "summarize judgment": "/case-summary",
+        "summarize case": "/case-summary",
+        "judgment summary": "/case-summary",
         # Loophole Detection
         "loopholes": "/loophole-detection",
         "loophole-detection": "/loophole-detection",
         "loophole detection": "/loophole-detection",
         "loophole": "/loophole-detection",
-        # Clause Classification
+        "find loopholes": "/loophole-detection",
+        "detect loopholes": "/loophole-detection",
+        "contract gaps": "/loophole-detection",
+        "missing clauses": "/loophole-detection",
+        # Clause Classification / Risk Analysis
         "classification": "/clause-classification",
         "clause-classification": "/clause-classification",
         "clause classification": "/clause-classification",
         "classify": "/clause-classification",
         "clause": "/clause-classification",
+        "risk analysis": "/clause-classification",
+        "clause analysis": "/clause-classification",
+        "analyze clauses": "/clause-classification",
+        "clause risk": "/clause-classification",
         # Chat
         "chat": "/chat-assistant",
         "chat-assistant": "/chat-assistant",
@@ -102,6 +160,7 @@ def get_platform_navigation(intent: str):
         "dashboard": "/dashboard",
         "history": "/activity-history",
         "activity": "/activity-history",
+        "activity history": "/activity-history",
     }
     result = routes.get(intent.lower().strip())
     return result if result else None
@@ -156,19 +215,50 @@ You have TWO roles:
 1. **General Assistant**: For general legal questions, greetings, or conversational queries, respond helpfully. Set intent to "general" and suggested_action to null.
 2. **Platform Navigator**: When the user wants to USE a specific platform feature, set intent to "navigation" and provide the correct suggested_action route.
 
-Available platform features and their EXACT routes:
-- Contract Drafting → "/contract-drafting"
-- Compliance Check → "/compliance-check"
-- Legal Research → "/legal-research"
-- Case Summary → "/case-summary"
-- Loophole Detection → "/loophole-detection"
-- Clause Classification → "/clause-classification"
-- Activity History → "/activity-history"
-- Dashboard → "/dashboard"
+Here are ALL the platform features, what they do, and their EXACT routes:
+
+1. **Contract Drafting** → "/contract-drafting"
+   - Generates professional legal contracts/documents using AI agents.
+   - Supports ALL contract types: NDA (Non-Disclosure Agreement), Employment Agreements, Service Agreements, Lease/Rental Agreements, Partnership Agreements/Deeds, Sale Agreements/Deeds, Vendor Agreements, Freelance/Consulting Contracts, MOU (Memorandum of Understanding), Power of Attorney, Wills, Loan Agreements, Franchise Agreements, Joint Venture Agreements, Licensing Agreements, Indemnity Bonds, Affidavits, Letters of Intent, Terms of Service, Privacy Policies, Shareholder Agreements, Operating Agreements, and any other legal document.
+   - User provides: contract type, parties, jurisdiction, requirements, key terms.
+   - Use this when the user wants to draft, create, write, generate, or make ANY type of contract or legal document.
+
+2. **Compliance Check** → "/compliance-check"
+   - Analyzes existing contract text for compliance issues against Indian regulations.
+   - Identifies high/medium/low risk clauses and suggests fixes with legal citations.
+   - Uses a multi-agent pipeline: Ingestion → Jurisdiction → Extraction → Retrieval → Reasoning → Remediation → Risk Scoring.
+   - Use this when the user wants to check, review, audit, or verify compliance of a contract.
+
+3. **Legal Research** → "/legal-research"
+   - RAG-powered legal research across Indian statutes, case laws, and regulations.
+   - Searches Pinecone knowledge base and provides cited answers.
+   - Use this when the user wants to research, look up, find, or search for specific laws, sections, acts, precedents, or legal information.
+
+4. **Case Summary** → "/case-summary"
+   - Summarizes legal judgments and court orders using AI.
+   - Extracts key holdings, citations, and rulings from case text.
+   - Use this when the user wants to summarize a case, judgment, court order, or legal ruling.
+
+5. **Loophole Detection** → "/loophole-detection"
+   - Scans contracts for loopholes, gaps, ambiguities, and missing clauses.
+   - Identifies potential legal vulnerabilities in contract text.
+   - Use this when the user wants to find loopholes, gaps, weaknesses, or missing clauses in a contract.
+
+6. **Clause Classification / Risk Analysis** → "/clause-classification"
+   - Analyzes individual contract clauses and classifies their risk levels.
+   - Provides risk explanations and recommendations for each clause.
+   - Use this when the user wants to analyze, classify, or assess risk of specific clauses in a contract.
+
+7. **Activity History** → "/activity-history"
+   - View past generated documents and chat history.
+
+8. **Dashboard** → "/dashboard"
+   - Overview of platform usage, credits, and recent activity.
 
 CRITICAL RULES:
 - For simple questions like "hello", "how are you", "what can you do", "explain X" → intent MUST be "general" and suggested_action MUST be null.
-- ONLY set suggested_action to a route when the user EXPLICITLY wants to navigate to or use a feature (e.g., "I want to draft a contract", "take me to compliance check").
+- ONLY set suggested_action to a route when the user EXPLICITLY wants to navigate to or use a feature (e.g., "I want to draft a contract", "draft an NDA", "check compliance", "take me to compliance check").
+- ANY request to draft/create/write ANY type of contract or document → MUST use "/contract-drafting".
 - NEVER return a route like "/chat-assistant" or "null" as suggested_action. If unsure, set suggested_action to null.
 - suggested_action must be EXACTLY one of the routes listed above, or null.
 
@@ -223,13 +313,25 @@ User message: {user_message}"""
             1. General Assistant: For greetings, legal questions, or conversational queries, respond helpfully with intent "general" and suggested_action null.
             2. Platform Navigator: When the user EXPLICITLY wants to use a platform feature, use 'get_platform_navigation' to find the correct route.
             
+            Here are ALL the platform features you can navigate users to:
+            
+            1. Contract Drafting ("/contract-drafting"): Generates professional legal contracts using AI agents. Supports ALL types: NDA, Employment Agreement, Service Agreement, Lease/Rental, Partnership, Sale Deed, Vendor Agreement, Freelance/Consulting, MOU, Power of Attorney, Will, Loan Agreement, Franchise, Joint Venture, Licensing, Indemnity, Affidavit, Letter of Intent, Terms of Service, Privacy Policy, Shareholder Agreement, and more.
+            2. Compliance Check ("/compliance-check"): Analyzes existing contracts for compliance issues against Indian regulations. Identifies risk levels and suggests fixes.
+            3. Legal Research ("/legal-research"): RAG-powered research across Indian statutes, case laws, and regulations with cited answers.
+            4. Case Summary ("/case-summary"): AI-powered summarization of legal judgments, court orders, and rulings.
+            5. Loophole Detection ("/loophole-detection"): Scans contracts for loopholes, gaps, ambiguities, and missing clauses.
+            6. Clause Classification ("/clause-classification"): Risk analysis and classification of individual contract clauses.
+            7. Activity History ("/activity-history"): Past documents and chat history.
+            8. Dashboard ("/dashboard"): Usage overview, credits, and recent activity.
+            
             Guidelines:
             1. Directness: Keep responses helpful but concise.
-            2. Feature Routing: ONLY use 'get_platform_navigation' when the user explicitly wants to navigate to a feature (e.g., "draft a contract", "check compliance").
-            3. For simple questions, greetings, or general legal queries, DO NOT use any tools. Just respond directly with intent "general".
-            4. Routing Integrity: You MUST use the exact routes returned by the tool. NEVER invent routes.
-            5. If 'get_platform_navigation' returns None, set suggested_action to null.
-            6. For legal context queries, use 'get_legal_context' and cite sources.
+            2. Feature Routing: ONLY use 'get_platform_navigation' when the user explicitly wants to navigate to a feature (e.g., "draft a contract", "draft an NDA", "check compliance").
+            3. ANY request to draft/create/write ANY type of contract or document → navigate to "draft" or "nda" etc. via 'get_platform_navigation'.
+            4. For simple questions, greetings, or general legal queries, DO NOT use any tools. Just respond directly with intent "general".
+            5. Routing Integrity: You MUST use the exact routes returned by the tool. NEVER invent routes.
+            6. If 'get_platform_navigation' returns None, set suggested_action to null.
+            7. For legal context queries, use 'get_legal_context' and cite sources.
             
             Response Format: You MUST return a JSON-compatible string:
             {{ "reply": "...", "intent": "research|navigation|general", "suggested_action": "/route|null", "citations": [{{ "title": "...", "source": "...", "text": "..." }}]|null }}
