@@ -24,6 +24,8 @@ import Careers from "@/pages/Careers";
 import Api from "@/pages/Api";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import Profile from "@/pages/Profile";
@@ -97,6 +99,15 @@ const App = () => (
                       </PublicRoute>
                     }
                   />
+                  <Route
+                    path="/forgot-password"
+                    element={
+                      <PublicRoute>
+                        <ForgotPassword />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
                   {/* Protected routes */}
                   <Route
