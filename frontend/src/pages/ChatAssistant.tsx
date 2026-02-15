@@ -85,7 +85,9 @@ const ChatAssistant = () => {
 
             const reply = response.data || "I'm sorry, I couldn't process that.";
             const intent = response.metadata?.intent;
-            const action = (response.metadata as any)?.suggested_action;
+            const rawAction = (response.metadata as any)?.suggested_action;
+            // Sanitize: only accept valid route paths, filter out "null" string and garbage
+            const action = (rawAction && rawAction !== "null" && rawAction.startsWith("/")) ? rawAction : undefined;
             const citations = (response.metadata as any)?.citations;
             const assistantMsgId = crypto.randomUUID();
 

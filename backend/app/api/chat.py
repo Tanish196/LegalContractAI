@@ -57,17 +57,54 @@ def get_platform_navigation(intent: str):
     """
     Find the URL route for a specific platform tool.
     Input should be the feature name the user is looking for.
-    Returns: The route string (e.g., '/contract-drafting')
+    Returns: The route string (e.g., '/contract-drafting') or None if no match.
     """
     routes = {
+        # Contract Drafting
         "drafting": "/contract-drafting",
+        "contract-drafting": "/contract-drafting",
+        "contract drafting": "/contract-drafting",
+        "draft": "/contract-drafting",
+        "contract": "/contract-drafting",
+        "create contract": "/contract-drafting",
+        # Compliance Check
         "compliance": "/compliance-check",
+        "compliance-check": "/compliance-check",
+        "compliance check": "/compliance-check",
+        "check compliance": "/compliance-check",
+        # Legal Research
         "research": "/legal-research",
+        "legal-research": "/legal-research",
+        "legal research": "/legal-research",
+        # Case Summary
         "summarization": "/case-summary",
+        "case-summary": "/case-summary",
+        "case summary": "/case-summary",
+        "summary": "/case-summary",
+        "summarize": "/case-summary",
+        "case summarization": "/case-summary",
+        # Loophole Detection
         "loopholes": "/loophole-detection",
+        "loophole-detection": "/loophole-detection",
+        "loophole detection": "/loophole-detection",
+        "loophole": "/loophole-detection",
+        # Clause Classification
         "classification": "/clause-classification",
+        "clause-classification": "/clause-classification",
+        "clause classification": "/clause-classification",
+        "classify": "/clause-classification",
+        "clause": "/clause-classification",
+        # Chat
+        "chat": "/chat-assistant",
+        "chat-assistant": "/chat-assistant",
+        "advisor": "/chat-assistant",
+        # Dashboard & History
+        "dashboard": "/dashboard",
+        "history": "/activity-history",
+        "activity": "/activity-history",
     }
-    return routes.get(intent.lower(), "null")
+    result = routes.get(intent.lower().strip())
+    return result if result else None
 
 @router.post(
     "/chat-assistant",
@@ -113,9 +150,30 @@ async def chat_assistant(request: ChatRequest):
         except AttributeError:
             # Fallback: use hybrid generate() for non-OpenAI providers
             logger.info("chat_model not available, using generate() fallback")
-            fallback_prompt = f"""You are a highly intelligent Indian Legal AI Advisor.
-Respond to the user's message helpfully and concisely.
-Return a JSON object: {{"reply": "...", "intent": "general", "suggested_action": null, "citations": null}}
+            fallback_prompt = f"""You are a highly intelligent Indian Legal AI Advisor on the LegalAssist platform.
+
+You have TWO roles:
+1. **General Assistant**: For general legal questions, greetings, or conversational queries, respond helpfully. Set intent to "general" and suggested_action to null.
+2. **Platform Navigator**: When the user wants to USE a specific platform feature, set intent to "navigation" and provide the correct suggested_action route.
+
+Available platform features and their EXACT routes:
+- Contract Drafting → "/contract-drafting"
+- Compliance Check → "/compliance-check"
+- Legal Research → "/legal-research"
+- Case Summary → "/case-summary"
+- Loophole Detection → "/loophole-detection"
+- Clause Classification → "/clause-classification"
+- Activity History → "/activity-history"
+- Dashboard → "/dashboard"
+
+CRITICAL RULES:
+- For simple questions like "hello", "how are you", "what can you do", "explain X" → intent MUST be "general" and suggested_action MUST be null.
+- ONLY set suggested_action to a route when the user EXPLICITLY wants to navigate to or use a feature (e.g., "I want to draft a contract", "take me to compliance check").
+- NEVER return a route like "/chat-assistant" or "null" as suggested_action. If unsure, set suggested_action to null.
+- suggested_action must be EXACTLY one of the routes listed above, or null.
+
+Return ONLY a valid JSON object (no markdown, no extra text):
+{{"reply": "your helpful response", "intent": "general|navigation", "suggested_action": "/route-here-or-null", "citations": null}}
 
 User message: {user_message}"""
             raw_output = await client.generate(fallback_prompt, temperature=0.3)
@@ -129,6 +187,17 @@ User message: {user_message}"""
             except Exception:
                 result = {"reply": raw_output, "intent": "general", "suggested_action": None, "citations": None}
             
+            # Sanitize suggested_action: only allow valid routes
+            valid_routes = {
+                "/contract-drafting", "/compliance-check", "/legal-research",
+                "/case-summary", "/loophole-detection", "/clause-classification",
+                "/activity-history", "/dashboard"
+            }
+            suggested_action = result.get("suggested_action")
+            if suggested_action and suggested_action not in valid_routes:
+                logger.warning(f"Invalid suggested_action from LLM: {suggested_action}, setting to None")
+                suggested_action = None
+            
             final_reply = result.get("reply", raw_output)
             if user_id:
                 try:
@@ -140,7 +209,7 @@ User message: {user_message}"""
             return ChatResponse(
                 reply=final_reply,
                 intent=result.get("intent", "general"),
-                suggested_action=result.get("suggested_action"),
+                suggested_action=suggested_action,
                 citations=None
             )
 
@@ -148,14 +217,19 @@ User message: {user_message}"""
         tools = [get_legal_context, get_platform_navigation]
         
         prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a highly intelligent Indian Legal AI Advisor.
-            Your goal is to assist users with legal queries using the 'get_legal_context' tool or guide them to platform features using 'get_platform_navigation'.
+            ("system", """You are a highly intelligent Indian Legal AI Advisor on the LegalAssist platform.
+            
+            You have TWO roles:
+            1. General Assistant: For greetings, legal questions, or conversational queries, respond helpfully with intent "general" and suggested_action null.
+            2. Platform Navigator: When the user EXPLICITLY wants to use a platform feature, use 'get_platform_navigation' to find the correct route.
             
             Guidelines:
-            1. Directness: Keep responses helpful but concise to ensure high performance.
-            2. Feature Routing: When a user wants a summary or task, use 'get_platform_navigation'. 
-            3. Routing Integrity: You MUST use the exact routes provided by the tool. For Case Summarization, the route is ALWAYS '/case-summary'. NEVER use '/case-summrisation'.
-            4. Context: Synthesize legal information into conversational advice with citations.
+            1. Directness: Keep responses helpful but concise.
+            2. Feature Routing: ONLY use 'get_platform_navigation' when the user explicitly wants to navigate to a feature (e.g., "draft a contract", "check compliance").
+            3. For simple questions, greetings, or general legal queries, DO NOT use any tools. Just respond directly with intent "general".
+            4. Routing Integrity: You MUST use the exact routes returned by the tool. NEVER invent routes.
+            5. If 'get_platform_navigation' returns None, set suggested_action to null.
+            6. For legal context queries, use 'get_legal_context' and cite sources.
             
             Response Format: You MUST return a JSON-compatible string:
             {{ "reply": "...", "intent": "research|navigation|general", "suggested_action": "/route|null", "citations": [{{ "title": "...", "source": "...", "text": "..." }}]|null }}
