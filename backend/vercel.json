@@ -23,11 +23,5 @@
     "PIP_NO_CACHE_DIR": "1",
     "PORT": "3000",
     "NODE_OPTIONS": "--max-old-space-size=2048"
-  },
-  "functions": {
-    "app/main.py": {
-      "maxDuration": 60,
-      "memory": 3008
-    }
   }
 }
