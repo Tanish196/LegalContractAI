@@ -25,7 +25,26 @@ class GenerationAgent:
         parties_text = "\n".join([f"- {p}" for p in parties]) if parties else "- Party A\n- Party B"
         warnings_text = "\n".join([f"⚠ {w}" for w in policy_warnings]) if policy_warnings else "None"
 
-        system_prompt = """You are an expert legal contract drafter. Generate a complete, professional legal contract.
+        # Try to fetch relevant clauses/examples from RAG
+        rag_context = ""
+        try:
+            from app.RAG.pinecone_store import pinecone_service
+            from app.config import INDEX_STATUTES # Using statutes index for now, ideally should be a contracts index
+            
+            # Simple query to find relevant legal text
+            vector_store = pinecone_service.get_vector_store(INDEX_STATUTES)
+            query = f"{contract_type} {detected_intent} {jurisdiction}"
+            docs = vector_store.similarity_search(query, k=3)
+            
+            if docs:
+                examples = "\n\n".join([f"--- Example Clause ---\n{d.page_content}" for d in docs])
+                rag_context = f"\n\nHere are some relevant legal text examples from {jurisdiction} to consider:\n{examples}\n"
+                logger.info(f"GenerationAgent: Injected {len(docs)} RAG documents into prompt")
+        except Exception as e:
+            logger.warning(f"GenerationAgent: RAG retrieval failed, proceeding without context: {e}")
+            rag_context = ""
+
+        system_prompt = f"""You are an expert legal contract drafter. Generate a complete, professional legal contract.
 
 RULES:
 1. Output ONLY the contract text in well-structured Markdown format.
@@ -34,7 +53,9 @@ RULES:
 4. Use clear headings (##), numbered clauses (1., 1.1, etc.), and proper legal language.
 5. Include standard legal boilerplate appropriate for the jurisdiction.
 6. The contract must be comprehensive and ready for legal review.
-7. Include signature blocks at the end."""
+7. Include signature blocks at the end.
+
+{rag_context}"""
 
         user_prompt = f"""Draft a {detected_intent} contract with the following details:
 

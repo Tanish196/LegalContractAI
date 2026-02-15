@@ -119,6 +119,123 @@ async def test_compliance():
             return False
 
 
+async def test_research():
+    """Test legal research endpoint"""
+    import aiohttp
+    
+    print("\n" + "=" * 60)
+    print("TEST 4: Legal Research")
+    print("=" * 60)
+    
+    data = {
+        "query": "What are the requirements for a valid contract in India?",
+        "jurisdiction": "India"
+    }
+    
+    print(f"Query: {data['query']}")
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                "http://localhost:8000/api/research/legal-research",
+                json=data,
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                result = await response.json()
+                print(f"Status: {response.status}")
+                
+                if response.status == 200:
+                    answer = result.get("answer", "")
+                    citations = result.get("citations", [])
+                    print(f"Answer Length: {len(answer)} chars")
+                    print(f"Citations: {len(citations)}")
+                    print(f"Preview: {answer[:200]}...")
+                    return True
+                else:
+                    print(f"Error: {json.dumps(result, indent=2)}")
+                    return False
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+
+async def test_summarization():
+    """Test case summarization endpoint"""
+    import aiohttp
+    
+    print("\n" + "=" * 60)
+    print("TEST 5: Case Summarization")
+    print("=" * 60)
+    
+    data = {
+        "case_text": "This is a sample case text. The court held that the contract was void due to lack of consideration. Section 25 of the Indian Contract Act was cited." * 10
+    }
+    
+    print(f"Case Text Length: {len(data['case_text'])} chars")
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                "http://localhost:8000/api/summarization/summarize-case",
+                json=data,
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                result = await response.json()
+                print(f"Status: {response.status}")
+                
+                if response.status == 200:
+                    summary = result.get("summary", "")
+                    key_holdings = result.get("key_holdings", [])
+                    print(f"Summary Length: {len(summary)} chars")
+                    print(f"Key Holdings: {len(key_holdings)}")
+                    print(f"Preview: {summary[:200]}...")
+                    return True
+                else:
+                    print(f"Error: {json.dumps(result, indent=2)}")
+                    return False
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+
+async def test_analysis():
+    """Test clause analysis endpoint"""
+    import aiohttp
+    
+    print("\n" + "=" * 60)
+    print("TEST 6: Clause Analysis")
+    print("=" * 60)
+    
+    data = {
+        "text": "The service provider shall not be liable for any damages, ensuring they have zero responsibility."
+    }
+    
+    print(f"Clause: {data['text']}")
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                "http://localhost:8000/api/analysis/analyze-clauses",
+                json=data,
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                result = await response.json()
+                print(f"Status: {response.status}")
+                
+                if response.status == 200:
+                    risks = result.get("risks", [])
+                    summary = result.get("summary", "")
+                    print(f"Risks Found: {len(risks)}")
+                    if risks:
+                        print(f"  Risk Level: {risks[0].get('risk_level')}")
+                        print(f"  Explanation: {risks[0].get('explanation')}")
+                    print(f"Summary: {summary[:200]}...")
+                    return True
+                else:
+                    print(f"Error: {json.dumps(result, indent=2)}")
+                    return False
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return False
+
 async def main():
     """Run all tests"""
     print("\n" + "=" * 60)
@@ -139,6 +256,15 @@ async def main():
     
     # Test 3: Compliance
     results.append(("Compliance Check", await test_compliance()))
+
+    # Test 4: Research
+    results.append(("Legal Research", await test_research()))
+
+    # Test 5: Summarization
+    results.append(("Case Summarization", await test_summarization()))
+
+    # Test 6: Analysis
+    results.append(("Clause Analysis", await test_analysis()))
     
     # Summary
     print("\n" + "=" * 60)
@@ -154,7 +280,7 @@ async def main():
     
     print(f"\nTotal: {passed}/{total} tests passed")
     print("=" * 60 + "\n")
-
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

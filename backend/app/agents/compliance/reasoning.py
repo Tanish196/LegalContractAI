@@ -19,16 +19,19 @@ class ComplianceReasoningAgent:
         
         findings = {}
         for clause in state.clauses:
-            statutes_text = "\n".join([f"- {s.get('source')} (Section {s.get('section')}): {s.get('text')}" for s in state.retrieved_statutes])
-            
+            if state.retrieved_statutes:
+                statutes_text = "\n".join([f"- {s.get('source')} (Section {s.get('section')}): {s.get('text')}" for s in state.retrieved_statutes])
+                guidance_text = f"Relevant Statutes:\n{statutes_text}"
+            else:
+                guidance_text = f"No specific statutes retrieved. Analyze based on general legal principles for contracts in {state.jurisdiction.get('country', 'India')}."
+
             prompt = f"""
             Analyze the following legal clause for compliance against the provided statutes and common legal standards in {state.jurisdiction.get('country', 'India')}.
 
             Clause Title: {clause.get('title')}
             Clause Text: {clause.get('text')}
 
-            Relevant Statutes:
-            {statutes_text}
+            {guidance_text}
 
             Determine:
             1. Status: 'compliant', 'violation', or 'warning'.

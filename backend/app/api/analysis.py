@@ -19,48 +19,75 @@ logger = logging.getLogger(__name__)
 )
 async def analyze_clauses(request: ClauseAnalysisRequest):
     try:
+        from app.config import OPENAI_API_KEY, INDEX_STATUTES
+        from app.RAG.pinecone_store import pinecone_service
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.output_parsers import JsonOutputParser
+        from app.schemas import ClauseAnalysisResponse
 
-        llm = get_llm_client()
-        prompt = f"""
-        Analyze the following contract text. Identify key clauses and their risk levels (High, Medium, Low).
-        Provide a brief explanation for each risk and a recommendation.
+        if not OPENAI_API_KEY:
+             # Fallback if no key (for testing without billing)
+             return ClauseAnalysisResponse(
+                risks=[
+                    {
+                        "clause_text": request.text[:50] + "...",
+                        "risk_level": "Medium",
+                        "explanation": "[Simulation] Missing API Key. This is a simulated risk analysis.",
+                        "recommendation": "Check API configuration."
+                    }
+                ],
+                summary="Analysis complete (Simulated)."
+            )
+
+        # 1. Retrieve RAG Context
+        rag_context = ""
+        try:
+            vector_store = pinecone_service.get_vector_store(INDEX_STATUTES)
+            # Query for laws relevant to this text
+            docs = vector_store.similarity_search(request.text[:500], k=3) 
+            
+            if docs:
+                rag_context = "\n".join([f"- {d.page_content}" for d in docs])
+                rag_context = f"\nRelevant Legal Statutes/Guidelines:\n{rag_context}\n"
+            else:
+                 logger.warning("No RAG documents retrieved for clause analysis. Using general principles.")
+                 rag_context = "\nNo specific statutes found. Evaluate based on general legal principles and standard commercial risks.\n"
+        except Exception as e:
+            logger.warning(f"RAG retrieval failed: {e}. Proceeding without context.")
+            rag_context = "\n(RAG System Unavailable) Evaluate based on general legal principles.\n"
+
+        # 2. Analyze with LLM
+        llm = ChatOpenAI(model="gpt-4o", temperature=0)
         
-        Contract Text:
-        {request.text}
-        
-        Output format (JSON):
-        {{
-            "risks": [
-                {{
-                    "clause_text": "...",
-                    "risk_level": "High/Medium/Low",
-                    "explanation": "...",
-                    "recommendation": "..."
-                }}
-            ],
-            "summary": "Overall summary of the contract risks."
-        }}
-        """
-        
-        result = await llm.ainvoke(prompt)
-        # Note: In a real implementation, we would parse the JSON output from the LLM.
-        # For now, we are assuming the LLM returns a structured object or we'd need a parser.
-        # Since I cannot assume the LLM output format perfectly without a parser, 
-        # I will return a mock response for safety if parsing fails, or try to parse locally.
-        
-        # MOCK IMPLEMENTATION FOR STABILITY UNTIL PARSER IS BUILT
-        mock_response = ClauseAnalysisResponse(
-            risks=[
-                ClauseRisk(
-                    clause_text=request.text[:50] + "...",
-                    risk_level="Medium",
-                    explanation="This is a simulated analysis.",
-                    recommendation="Review with a lawyer."
-                )
-            ],
-            summary="Analysis complete."
+        parser = JsonOutputParser(pydantic_object=ClauseAnalysisResponse)
+
+        prompt = PromptTemplate(
+            template="""You are an expert contract risk analyst. Analyze the following contract text.
+            Identify key clauses and their risk levels (High, Medium, Low).
+            Provide a brief explanation for each risk and a recommendation.
+
+            Use the provided legal context if relevant.
+            
+            {rag_context}
+            
+            Contract Text:
+            {text}
+            
+            {format_instructions}
+            """,
+            input_variables=["text", "rag_context"],
+            partial_variables={"format_instructions": parser.get_format_instructions()},
         )
-        return mock_response
+        
+        chain = prompt | llm | parser
+        
+        result = await chain.ainvoke({"text": request.text[:15000], "rag_context": rag_context})
+        
+        return ClauseAnalysisResponse(
+            risks=result.get("risks", []),
+            summary=result.get("summary", "Analysis complete.")
+        )
 
     except Exception as e:
         logger.error(f"Error in analyze_clauses: {e}")

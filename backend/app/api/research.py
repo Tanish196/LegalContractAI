@@ -57,6 +57,10 @@ async def legal_research(request: LegalResearchRequest):
                 source=source,
                 text=content[:200] + "..." # Snippet
             ))
+            
+        if not all_docs:
+             logger.warning("No RAG documents retrieved. Proceeding with general knowledge fallback.")
+             context_str = "No specific legal documents found in the database. Please answer based on general legal principles."
 
         # 3. Synthesize with LLM
         if not OPENAI_API_KEY:

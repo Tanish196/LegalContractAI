@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { aiClient } from "@/lib/ai-clients";
-import PipelineViewer, { DEFAULT_STAGES } from "@/components/PipelineViewer";
+import PipelineViewer, { DEFAULT_STAGES, COMPLIANCE_STAGES, RESEARCH_STAGES, SUMMARY_STAGES } from "@/components/PipelineViewer";
 import { TaskType, AIFormProps } from '@/types/ai';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -371,8 +371,18 @@ const AIForm: React.FC<AIFormProps> = ({
         </Card>
 
         {/* Agent Pipeline Progress Viewer — only for contract drafting */}
+        {/* Agent Pipeline Progress Viewer */}
         {isLoading && taskType === "contract-drafting" && (
           <PipelineViewer stages={DEFAULT_STAGES} isActive={isLoading} />
+        )}
+        {isLoading && taskType === "compliance-check" && (
+          <PipelineViewer stages={COMPLIANCE_STAGES} isActive={isLoading} />
+        )}
+        {isLoading && taskType === "legal-research" && (
+          <PipelineViewer stages={RESEARCH_STAGES} isActive={isLoading} />
+        )}
+        {isLoading && taskType === "case-summary" && (
+          <PipelineViewer stages={SUMMARY_STAGES} isActive={isLoading} />
         )}
 
         {response && (

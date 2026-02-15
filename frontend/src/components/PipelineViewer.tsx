@@ -25,6 +25,31 @@ const DEFAULT_STAGES: PipelineStage[] = [
     { id: "review", label: "Self Review", description: "Quality & completeness check", icon: "✅" },
 ];
 
+const COMPLIANCE_STAGES: PipelineStage[] = [
+    { id: "ingestion", label: "Ingestion", description: "Parsing document structure", icon: "📥" },
+    { id: "jurisdiction", label: "Jurisdiction", description: "Determining legal context", icon: "xx" }, // xx to be replaced or handled by flag emoji logic if available, or just use map icon
+    { id: "extraction", label: "Extraction", description: "Identifying key clauses", icon: "🔍" },
+    { id: "retrieval", label: "Retrieval", description: "Fetching relevant statutes", icon: "📚" },
+    { id: "reasoning", label: "Reasoning", description: "Analyzing compliance", icon: "🧠" },
+    { id: "risk", label: "Risk Scoring", description: "Calculating risk assessment", icon: "⚠️" },
+];
+
+const RESEARCH_STAGES: PipelineStage[] = [
+    { id: "query", label: "Query Analysis", description: "Parsing legal question", icon: "❓" },
+    { id: "statutes", label: "Statutes", description: "Searching acts & regulations", icon: "📖" },
+    { id: "cases", label: "Case Law", description: "Finding relevant precedents", icon: "⚖️" },
+    { id: "synthesis", label: "Synthesis", description: "Combining legal authorities", icon: "🧪" },
+    { id: "formatting", label: "Formatting", description: "Structuring legal memo", icon: "📝" },
+];
+
+const SUMMARY_STAGES: PipelineStage[] = [
+    { id: "ingest", label: "Text Analysis", description: "Reading case text", icon: "📄" },
+    { id: "facts", label: "Fact Extraction", description: "Identifying key facts", icon: "🔍" },
+    { id: "holding", label: "Holding", description: "Determining court's ruling", icon: "⚖️" },
+    { id: "reasoning", label: "Reasoning", description: "Summarizing legal logic", icon: "🧠" },
+    { id: "final", label: "Final Summary", description: "Generating concise output", icon: "📝" },
+];
+
 /**
  * PipelineViewer — shows the 5 agentic stages as a horizontal landscape progress bar.
  * Stages animate sequentially when `isActive` is true.
@@ -173,5 +198,5 @@ const PipelineViewer: React.FC<PipelineViewerProps> = ({
     );
 };
 
-export { DEFAULT_STAGES };
+export { DEFAULT_STAGES, COMPLIANCE_STAGES, RESEARCH_STAGES, SUMMARY_STAGES };
 export default PipelineViewer;
