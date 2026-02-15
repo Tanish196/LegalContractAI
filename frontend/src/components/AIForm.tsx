@@ -42,6 +42,7 @@ const AIForm: React.FC<AIFormProps> = ({
   taskType,
   additionalFields,
   additionalData,
+  onReset,
 }) => {
   const [inputMethod, setInputMethod] = useState<"text" | "file">("text");
   const [inputText, setInputText] = useState("");
@@ -257,6 +258,10 @@ const AIForm: React.FC<AIFormProps> = ({
     setInputText("");
     setFile(null);
     setResponse(null);
+    // Call parent's reset callback if provided
+    if (onReset) {
+      onReset();
+    }
   };
 
   const summary = response?.metadata?.summary as ComplianceSummary | undefined;

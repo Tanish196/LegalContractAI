@@ -11,13 +11,23 @@ const LawTemplate = () => {
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const [templateType, setTemplateType] = React.useState("employment");
+  const [jurisdiction, setJurisdiction] = React.useState("us");
+  const [specificRequirements, setSpecificRequirements] = React.useState("");
+
+  const handleReset = () => {
+    setTemplateType("employment");
+    setJurisdiction("us");
+    setSpecificRequirements("");
+  };
   
   const additionalFields = (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="template-type">Template Type</Label>
-          <Select defaultValue="employment">
+          <Select value={templateType} onValueChange={setTemplateType}>
             <SelectTrigger>
               <SelectValue placeholder="Select template type" />
             </SelectTrigger>
@@ -33,7 +43,7 @@ const LawTemplate = () => {
         
         <div className="space-y-2">
           <Label htmlFor="jurisdiction">Jurisdiction</Label>
-          <Select defaultValue="us">
+          <Select value={jurisdiction} onValueChange={setJurisdiction}>
             <SelectTrigger>
               <SelectValue placeholder="Select jurisdiction" />
             </SelectTrigger>
@@ -53,6 +63,8 @@ const LawTemplate = () => {
         <Input 
           id="specific-requirements" 
           placeholder="Enter any specific clauses or requirements for your template"
+          value={specificRequirements}
+          onChange={(e) => setSpecificRequirements(e.target.value)}
         />
       </div>
     </div>
@@ -70,6 +82,12 @@ const LawTemplate = () => {
           placeholder="Describe what kind of legal template you need..."
           taskType="law-template"
           additionalFields={additionalFields}
+          additionalData={{
+            templateType,
+            jurisdiction,
+            specificRequirements
+          }}
+          onReset={handleReset}
         />
       </div>
     </div>

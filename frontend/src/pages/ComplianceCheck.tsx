@@ -14,6 +14,10 @@ const ComplianceCheck = () => {
 
   const [standards, setStandards] = React.useState<string[]>(['gdpr']);
 
+  const handleReset = () => {
+    setStandards(['gdpr']);
+  };
+
   const handleCheckboxChange = (id: string, checked: boolean) => {
     setStandards(prev =>
       checked ? [...prev, id] : prev.filter(s => s !== id)
@@ -93,6 +97,7 @@ const ComplianceCheck = () => {
           taskType="compliance-check"
           additionalFields={additionalFields}
           additionalData={{ standards }}
+          onReset={handleReset}
         />
       </div>
     </div>

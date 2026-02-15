@@ -36,6 +36,7 @@ function stripMarkdownFences(text: string): string {
 const GeneratedReport: React.FC<GeneratedReportProps> = ({ value, title = "Generated Report" }) => {
   const [mode, setMode] = useState<"preview" | "edit">("preview");
   const [draft, setDraft] = useState(value);
+  const [editedHtml, setEditedHtml] = useState<string>("");
   const editorRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -43,16 +44,22 @@ const GeneratedReport: React.FC<GeneratedReportProps> = ({ value, title = "Gener
     setDraft(stripMarkdownFences(value));
   }, [value]);
 
+  // Sync editor content when mode changes or draft changes
+  useEffect(() => {
+    if (mode === "edit" && editorRef.current && !editedHtml) {
+      editorRef.current.innerHTML = html as string;
+    }
+  }, [mode, html, editedHtml]);
+
   const html = useMemo(() => {
     const cleaned = stripMarkdownFences(draft);
     return marked.parse(cleaned);
   }, [draft]);
 
-  // Sync contentEditable changes back to draft state
+  // Sync contentEditable changes back to edited HTML state
   const handleEditorInput = () => {
     if (editorRef.current) {
-      // We keep the HTML in the editor; draft stores the original markdown
-      // for PDF/DOCX export. On edit, we update draft from editor innerHTML.
+      setEditedHtml(editorRef.current.innerHTML);
     }
   };
 
@@ -63,10 +70,20 @@ const GeneratedReport: React.FC<GeneratedReportProps> = ({ value, title = "Gener
 
   const handleReset = () => {
     setDraft(stripMarkdownFences(value));
+    setEditedHtml(""); // Clear any edits
+    // Force re-render of contentEditable div
+    if (editorRef.current) {
+      const cleaned = stripMarkdownFences(value);
+      editorRef.current.innerHTML = marked.parse(cleaned) as string;
+    }
     toast.success("Reverted to original output");
   };
 
   const getExportHtml = (): string => {
+    // If we have edited HTML, use that
+    if (editedHtml) {
+      return editedHtml;
+    }
     // If we're in edit mode, use the contentEditable HTML directly
     if (mode === "edit" && editorRef.current) {
       return editorRef.current.innerHTML;
@@ -181,6 +198,7 @@ const GeneratedReport: React.FC<GeneratedReportProps> = ({ value, title = "Gener
             />
           ) : (
             <div
+              key={editedHtml ? "edited" : draft} // Force re-render on reset
               ref={editorRef}
               className="legal-document"
               contentEditable
