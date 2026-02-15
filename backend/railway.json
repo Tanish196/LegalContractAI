@@ -1,25 +1,13 @@
 {
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "buildpacks",
-    "buildpacks": ["nixpacks"],
-    "nixpacks": {
-      "config": {
-        "pythonVersion": "3.11",
-        "aptPackages": ["libpq-dev"]
-      }
-    }
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -U uv && uv pip install -r requirements.txt"
   },
-  "start": {
-    "cmd": "gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --max-requests 1000 --max-requests-jitter 100"
-  },
-  "env": {
-    "PYTHONUNBUFFERED": "true",
-    "PYTHONDONTWRITEBYTECODE": "true",
-    "PIP_NO_CACHE_DIR": "true",
-    "UV_COMPILE_BYTECODE": "true",
-    "UV_HTTP_TIMEOUT": "600"
-  },
-  "variables": {
-    "PORT": "8000"
+  "deploy": {
+    "startCommand": "gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --max-requests 1000 --max-requests-jitter 100",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "on_failure"
   }
 }
