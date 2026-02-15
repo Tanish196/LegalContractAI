@@ -23,8 +23,8 @@ langchain-community
 langchain-google-genai
 google-generativeai
 langchain-huggingface
-sentence-transformers==3.2.1
-pinecone-client[grpc]>=3.2.0
+# sentence-transformers==3.2.1  # Removed: using Pinecone server-side embeddings
+pinecone-client[grpc]>=3.2.2,<4.0.0
 
 langchain-pinecone>=0.1.0
 langchain-openai

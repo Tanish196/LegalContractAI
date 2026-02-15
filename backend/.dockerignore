@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test outputs
+test_*.txt
+final_test_out*.txt
+test_output*.txt
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Frontend (deployed separately on Vercel)
+../frontend/
+
+# Node (if any frontend build artifacts)
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Additional
+.github/
+*.md

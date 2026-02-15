@@ -34,9 +34,9 @@ PDF_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
 # Pinecone Indexes
 # Pinecone Indexes
-INDEX_STATUTES = "indian-statutes"
-INDEX_REGULATIONS = "indian-regulations"
-INDEX_CLAUSES = "contract-clauses"
-INDEX_CASES = "case-law-summaries"
+INDEX_STATUTES = "indian-statutes-v2"
+INDEX_REGULATIONS = "indian-regulations-v2"
+INDEX_CLAUSES = "contract-clauses-v2"
+INDEX_CASES = "case-law-summaries-v2"
 INDEX_SYNTHETIC = "synthetic-jurisdictions" # Optional/Legacy
 INDEX_COMMENTARY = "legal-commentary" # Optional/Legacy

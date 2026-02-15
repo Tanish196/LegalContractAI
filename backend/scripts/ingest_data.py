@@ -89,6 +89,27 @@ def get_mock_regulations():
 def ingest_data():
     print("Starting data ingestion with specialized strategies...")
     
+    # Clean up old indexes if needed to stay within limits (Limit: 5)
+    pc = pinecone_service.pc
+    existing_indexes = [i.name for i in pc.list_indexes()]
+    print(f"Current indexes: {existing_indexes}")
+    
+    # List of v1 indexes to cleanup
+    v1_indexes = ["indian-statutes", "indian-regulations", "contract-clauses", "case-law-summaries", "test-index-v2"]
+    
+    for old_index in v1_indexes:
+        if old_index in existing_indexes:
+            print(f"Removing old index {old_index} to free up space...")
+            try:
+                pc.delete_index(old_index)
+                print(f"Deleted {old_index}")
+            except Exception as e:
+                print(f"Failed to delete {old_index}: {e}")
+                
+    # Wait a moment for deletion to propagate
+    import time
+    time.sleep(5)
+    
     # --- 1. Statutes (Chunking: Section based - represented by pre-chunked docs here) ---
     print(f"Ingesting Statutes into {INDEX_STATUTES}...")
     statutes = get_mock_statutes()
