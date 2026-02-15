@@ -182,6 +182,25 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = Field(None, description="Detailed error information")
 
 
+# --- Usage History ---
+class UsageRecordRequest(BaseModel):
+    user_id: str
+    service_type: str
+    prompt_title: Optional[str] = None
+    prompt_output: Optional[str] = None
+
+class UsageHistoryItem(BaseModel):
+    id: str
+    user_id: str
+    service_type: str
+    created_at: str
+    prompt_title: Optional[str] = None
+    prompt_output: Optional[str] = None
+    is_encrypted: bool = False
+
+class UsageHistoryResponse(BaseModel):
+    history: List[UsageHistoryItem]
+
 class HealthResponse(BaseModel):
     """Health check response"""
     status: str = Field(..., description="Service status")

@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { ServiceType, TaskType } from '@/types/ai';
 
-// Map AI task types to service types for database storage
 const taskToServiceType: Record<TaskType, ServiceType> = {
   'contract-drafting': 'contract_draft',
   'compliance-check': 'compliance_check',
@@ -11,6 +10,8 @@ const taskToServiceType: Record<TaskType, ServiceType> = {
   'legal-research': 'legal_research',
   'chat-assistant': 'chat_assistant'
 };
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export interface UsageHistoryItem {
   id: string;
@@ -30,19 +31,23 @@ export async function recordUsage(
   const serviceType = taskToServiceType[taskType];
 
   try {
-    // 1. Record in history
-    const { error: historyError } = await supabase
-      .from('usage_history')
-      .insert({
+    // 1. Record in history via backend (which handles encryption)
+    const response = await fetch(`${API_BASE_URL}/api/usage/record`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         user_id: userId,
         service_type: serviceType,
         prompt_title: promptTitle || null,
         prompt_output: promptOutput || null
-      });
+      })
+    });
 
-    if (historyError) throw historyError;
+    if (!response.ok) {
+      throw new Error(`Failed to record usage via backend: ${response.statusText}`);
+    }
 
-    // 2. Decrement remaining credits
+    // 2. Decrement remaining credits (still client-side for now, but backend could handle this too)
     const { data: creditData, error: fetchError } = await supabase
       .from('user_credits')
       .select('credits_remaining, credits_used_today')
@@ -107,19 +112,10 @@ export async function getUserCredits(userId: string): Promise<CreditInfo> {
 
 export async function getRecentActivity(userId: string, limit: number = 5): Promise<UsageHistoryItem[]> {
   try {
-    const { data, error } = await supabase
-      .from('usage_history')
-      .select('id, user_id, service_type, created_at, prompt_title')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      console.error('Error fetching recent activity:', error);
-      throw error;
-    }
-
-    return data || [];
+    const response = await fetch(`${API_BASE_URL}/api/usage/history?user_id=${userId}`);
+    if (!response.ok) throw new Error("Failed to fetch history");
+    const data = await response.json();
+    return (data.history || []).slice(0, limit);
   } catch (err) {
     console.error('Failed to fetch recent activity:', err);
     throw err;
@@ -131,18 +127,9 @@ export async function getRecentActivity(userId: string, limit: number = 5): Prom
  */
 export async function getActivityDetail(activityId: string): Promise<UsageHistoryItem | null> {
   try {
-    const { data, error } = await supabase
-      .from('usage_history')
-      .select('*')
-      .eq('id', activityId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching activity detail:', error);
-      throw error;
-    }
-
-    return data;
+    const response = await fetch(`${API_BASE_URL}/api/usage/history/${activityId}`);
+    if (!response.ok) throw new Error("Failed to fetch activity detail");
+    return await response.json();
   } catch (err) {
     console.error('Failed to fetch activity detail:', err);
     throw err;

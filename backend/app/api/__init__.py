@@ -10,6 +10,7 @@ from .analysis import router as analysis_router
 from .research import router as research_router
 from .summarization import router as summarization_router
 from .chat import router as chat_router
+from .usage import router as usage_router
 
 __all__ = ['drafting_router', 'compliance_router', 'health_router', 'reports_router', 
-           'analysis_router', 'research_router', 'summarization_router', 'chat_router']
+           'analysis_router', 'research_router', 'summarization_router', 'chat_router', 'usage_router']

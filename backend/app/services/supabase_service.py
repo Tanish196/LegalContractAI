@@ -72,12 +72,81 @@ class SupabaseService:
             logger.error(f"Failed to fetch chat history: {e}")
             return []
 
-def base64_if_needed(data):
-    if isinstance(data, bytes):
-        return base64.b64encode(data).decode('utf-8')
-    return data
+    def record_usage(self, user_id: str, service_type: str, prompt_title: str = None, prompt_output: str = None, encrypted_data: dict = None):
+        """
+        Records usage in the usage_history table.
+        """
+        if not self.client:
+            logger.error("Supabase client not initialized.")
+            return None
 
-import base64 # Import inside or move to top
+        try:
+            data = {
+                "user_id": user_id,
+                "service_type": service_type,
+                "prompt_title": prompt_title,
+            }
+
+            if encrypted_data:
+                # Use hex encoding for BYTEA column
+                raw_bytes = encrypted_data["encrypted_content"]
+                hex_content = "\\x" + raw_bytes.hex()
+                data.update({
+                    "encrypted_output": hex_content,
+                    "encryption_version": encrypted_data["encryption_version"],
+                    "is_encrypted": encrypted_data["is_encrypted"],
+                    "prompt_output": None
+                })
+            else:
+                data.update({
+                    "prompt_output": prompt_output,
+                    "is_encrypted": False
+                })
+
+            response = self.client.table("usage_history").insert(data).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Failed to record usage: {e}")
+            return None
+
+    def get_usage_history(self, user_id: str, limit: int = 50):
+        """
+        Retrieves usage history for a user.
+        """
+        if not self.client:
+            logger.error("Supabase client not initialized.")
+            return []
+
+        try:
+            response = self.client.table("usage_history") \
+                .select("*") \
+                .eq("user_id", user_id) \
+                .order("created_at", desc=True) \
+                .limit(limit) \
+                .execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Failed to fetch usage history: {e}")
+            return []
+
+    def get_usage_detail(self, activity_id: str):
+        """
+        Retrieves a single usage record by ID.
+        """
+        if not self.client:
+            logger.error("Supabase client not initialized.")
+            return None
+
+        try:
+            response = self.client.table("usage_history") \
+                .select("*") \
+                .eq("id", activity_id) \
+                .single() \
+                .execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Failed to fetch usage detail: {e}")
+            return None
 
 # Singleton instance
 db_service = SupabaseService()

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     drafting_router, compliance_router, health_router, reports_router,
-    analysis_router, research_router, summarization_router, chat_router
+    analysis_router, research_router, summarization_router, chat_router, usage_router
 )
 
 # Configure logging
@@ -53,6 +53,7 @@ app.include_router(analysis_router)
 app.include_router(research_router)
 app.include_router(summarization_router)
 app.include_router(chat_router)
+app.include_router(usage_router)
 
 # Root endpoint
 @app.get("/", tags=["Root"])
