@@ -1,4 +1,6 @@
-export type TaskType = 'case-summary' | 'loophole-detection' | 'clause-classification' | 'contract-drafting' | 'compliance-check' | 'legal-research' | 'chat-assistant';
+import React from 'react';
+
+export type TaskType = 'case-summary' | 'loophole-detection' | 'clause-classification' | 'contract-drafting' | 'compliance-check' | 'legal-research' | 'chat-assistant' | 'law-template';
 
 export type ServiceType =
   | 'contract_draft'
@@ -17,4 +19,5 @@ export interface AIFormProps {
   additionalFields?: React.ReactNode;
   additionalData?: Record<string, any>;
   onReset?: () => void;
+  summaryRenderer?: (metadata: Record<string, any> | null) => React.ReactNode;
 }

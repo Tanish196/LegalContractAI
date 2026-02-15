@@ -43,6 +43,7 @@ const AIForm: React.FC<AIFormProps> = ({
   additionalFields,
   additionalData,
   onReset,
+  summaryRenderer,
 }) => {
   const [inputMethod, setInputMethod] = useState<"text" | "file">("text");
   const [inputText, setInputText] = useState("");
@@ -392,7 +393,9 @@ const AIForm: React.FC<AIFormProps> = ({
 
         {response && (
           <div className="space-y-6">
-            {summary && (
+            {summaryRenderer && summaryRenderer(response.metadata)}
+            
+            {!summaryRenderer && summary && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[{
                   label: "Total Clauses",
@@ -420,7 +423,7 @@ const AIForm: React.FC<AIFormProps> = ({
               </div>
             )}
 
-            {actionItems && actionItems.length > 0 && (
+            {!summaryRenderer && actionItems && actionItems.length > 0 && (
               <Card>
                 <CardContent className="py-4 space-y-2">
                   <p className="text-sm font-semibold">Priority Actions</p>

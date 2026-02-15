@@ -44,17 +44,17 @@ const GeneratedReport: React.FC<GeneratedReportProps> = ({ value, title = "Gener
     setDraft(stripMarkdownFences(value));
   }, [value]);
 
+  const html = useMemo(() => {
+    const cleaned = stripMarkdownFences(draft);
+    return marked.parse(cleaned);
+  }, [draft]);
+
   // Sync editor content when mode changes or draft changes
   useEffect(() => {
     if (mode === "edit" && editorRef.current && !editedHtml) {
       editorRef.current.innerHTML = html as string;
     }
   }, [mode, html, editedHtml]);
-
-  const html = useMemo(() => {
-    const cleaned = stripMarkdownFences(draft);
-    return marked.parse(cleaned);
-  }, [draft]);
 
   // Sync contentEditable changes back to edited HTML state
   const handleEditorInput = () => {

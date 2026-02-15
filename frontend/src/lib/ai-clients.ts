@@ -62,10 +62,72 @@ const ROUTES: Record<TaskType, RouteConfig> = {
     path: '/api/analysis/analyze-clauses',
     expects: 'json',
     buildPayload: (content) => ({ text: content }),
-    transform: (payload) => ({
-      result: typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2),
-      metadata: payload
-    })
+    transform: (payload) => {
+      // Format clause analysis results as markdown
+      let markdown = `# Clause Classification Report\n\n`;
+      
+      if (payload.summary) {
+        markdown += `## Summary\n\n${payload.summary}\n\n`;
+      }
+      
+      if (payload.risks && Array.isArray(payload.risks) && payload.risks.length > 0) {
+        markdown += `## Identified Clauses & Risk Analysis\n\n`;
+        
+        // Group by risk level
+        const high = payload.risks.filter((r: any) => r.risk_level === 'High');
+        const medium = payload.risks.filter((r: any) => r.risk_level === 'Medium');
+        const low = payload.risks.filter((r: any) => r.risk_level === 'Low');
+        
+        // High Risk Clauses
+        if (high.length > 0) {
+          markdown += `### 🔴 High Risk Clauses (${high.length})\n\n`;
+          high.forEach((risk: any, idx: number) => {
+            markdown += `#### ${idx + 1}. ${risk.clause_text.substring(0, 80)}${risk.clause_text.length > 80 ? '...' : ''}\n\n`;
+            markdown += `**Clause Text:**\n> ${risk.clause_text}\n\n`;
+            markdown += `**Risk Analysis:**\n${risk.explanation}\n\n`;
+            if (risk.recommendation) {
+              markdown += `**Recommendation:**\n${risk.recommendation}\n\n`;
+            }
+            markdown += `---\n\n`;
+          });
+        }
+        
+        // Medium Risk Clauses
+        if (medium.length > 0) {
+          markdown += `### 🟡 Medium Risk Clauses (${medium.length})\n\n`;
+          medium.forEach((risk: any, idx: number) => {
+            markdown += `#### ${idx + 1}. ${risk.clause_text.substring(0, 80)}${risk.clause_text.length > 80 ? '...' : ''}\n\n`;
+            markdown += `**Clause Text:**\n> ${risk.clause_text}\n\n`;
+            markdown += `**Risk Analysis:**\n${risk.explanation}\n\n`;
+            if (risk.recommendation) {
+              markdown += `**Recommendation:**\n${risk.recommendation}\n\n`;
+            }
+            markdown += `---\n\n`;
+          });
+        }
+        
+        // Low Risk Clauses
+        if (low.length > 0) {
+          markdown += `### 🟢 Low Risk Clauses (${low.length})\n\n`;
+          low.forEach((risk: any, idx: number) => {
+            markdown += `#### ${idx + 1}. ${risk.clause_text.substring(0, 80)}${risk.clause_text.length > 80 ? '...' : ''}\n\n`;
+            markdown += `**Clause Text:**\n> ${risk.clause_text}\n\n`;
+            markdown += `**Risk Analysis:**\n${risk.explanation}\n\n`;
+            if (risk.recommendation) {
+              markdown += `**Recommendation:**\n${risk.recommendation}\n\n`;
+            }
+            markdown += `---\n\n`;
+          });
+        }
+      } else {
+        markdown += `*No clauses identified for classification.*\n`;
+      }
+      
+      return {
+        result: markdown,
+        metadata: payload
+      };
+    }
   },
   'loophole-detection': {
     path: '/api/reports/generate',
