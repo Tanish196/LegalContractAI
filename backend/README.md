@@ -1,6 +1,6 @@
 # LegalContractAI Backend API
 
-FastAPI backend for AI-powered legal contract drafting and compliance checking.
+FastAPI backend for AI-powered legal contract drafting, compliance checking, and intelligent analysis. Powered by advanced LLMs (Google Gemini, OpenAI) with RAG (Retrieval-Augmented Generation) capabilities using Pinecone vector database.
 
 ## 🚀 Quick Start
 

@@ -2,6 +2,7 @@
 fastapi==0.115.4
 uvicorn[standard]==0.32.0
 python-multipart==0.0.6
+gunicorn
 
 # HTTP Client
 aiohttp==3.11.11
@@ -26,3 +27,4 @@ pinecone-client[grpc]>=3.2.0
 langchain-pinecone>=0.1.0
 langchain-openai
 supabase==2.3.4
+
