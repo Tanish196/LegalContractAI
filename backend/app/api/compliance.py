@@ -66,12 +66,12 @@ async def check_compliance_endpoint(request: ComplianceCheckRequest):
             clause_text = next((c["text"] for c in final_state.clauses if c["id"] == clause_id), "")
             
             compliance_report.append(ComplianceIssue(
-                clause_id=clause_id,
-                text=clause_text,
-                status=finding.get("status", "unknown"),
-                reason=finding.get("reason", "No reason provided"),
-                risk_level=finding.get("risk_level", "low"),
-                recommendation=finding.get("suggested_fix", "")
+                clause=clause_text,
+                heading=f"Clause {clause_id}",
+                risk_level=finding.get("risk_level", "low").lower(),
+                fix=finding.get("suggested_fix", "No fix recommended"),
+                issue_summary=finding.get("reason", "Analyzed for compliance"),
+                citations=finding.get("citations", [])
             ))
 
         summary = final_state.risk_summary
@@ -90,8 +90,11 @@ async def check_compliance_endpoint(request: ComplianceCheckRequest):
             drafted_contract=final_state.final_contract or contract_text,
             compliance_report=compliance_report,
             summary=summary,
-            insights=[log.get("details") for log in final_state.audit_log if log.get("action") == "Analyze"], # simplistic mapping
-            report_markdown=f"# Compliance Report\n\nOverall Risk: {summary.get('risk_level')}\n\n..." # placeholder for full markdown generation
+            insights={
+                "analysis_logs": [log.get("details") for log in final_state.audit_log if log.get("action") == "Analyze"],
+                "total_issues": len(compliance_report)
+            },
+            report_markdown=f"# Compliance Report\n\nOverall Risk: {summary.get('risk_level')}\n\n..."
         )
         
         logger.info(f"Compliance check completed: {len(compliance_report)} issues found")

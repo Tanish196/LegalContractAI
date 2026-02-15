@@ -116,13 +116,13 @@ async def chat_assistant(request: ChatRequest):
             Your goal is to assist users with legal queries using the 'get_legal_context' tool or guide them to platform features using 'get_platform_navigation'.
             
             Guidelines:
-            1. If the user asks a specific legal question or needs knowledge, use 'get_legal_context'. 
-            2. If the user wants to perform a task (draft, summary, etc.), use 'get_platform_navigation' to find the route.
-            3. Always synthesize the information retrieved from tools into a helpful, conversational response.
-            4. If you used legal context, ensure your response references the statutes or cases found.
+            1. Directness: Keep responses helpful but concise to ensure high performance.
+            2. Feature Routing: When a user wants a summary or task, use 'get_platform_navigation'. 
+            3. Routing Integrity: You MUST use the exact routes provided by the tool. For Case Summarization, the route is ALWAYS '/case-summary'. NEVER use '/case-summrisation'.
+            4. Context: Synthesize legal information into conversational advice with citations.
             
-            Response Requirement: You MUST return your final response as a JSON-compatible string that matches the structure:
-            {{ "reply": "...", "intent": "one of [research, navigation, general]", "suggested_action": "/route or null", "citations": [{{ "title": "...", "source": "...", "text": "..." }}] or null }}
+            Response Format: You MUST return a JSON-compatible string:
+            {{ "reply": "...", "intent": "research|navigation|general", "suggested_action": "/route|null", "citations": [{{ "title": "...", "source": "...", "text": "..." }}]|null }}
             """),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
