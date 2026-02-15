@@ -1,6 +1,6 @@
 # LegalContractAI - AI-Powered Legal Contract Platform
 
-A sophisticated, full-stack AI-powered platform for drafting, analyzing, and managing legal contracts. Built with a React frontend and FastAPI backend, leveraging advanced LLMs (Google Gemini) and RAG (Retrieval-Augmented Generation) for intelligent legal document management.
+A sophisticated, full-stack AI-powered platform for drafting, analyzing, and managing legal contracts. Built with a React frontend and FastAPI backend, leveraging advanced LLMs (Open AI) and RAG (Retrieval-Augmented Generation) for intelligent legal document management.
 
 ## 🎯 Overview
 
@@ -118,8 +118,8 @@ LegalContractAI/
 - **Python**: 3.10+ (with pip and virtual environment)
 - **Git**: For version control
 - **API Keys**:
-  - Google Generative AI (Gemini) API key
-  - OpenAI API key (optional)
+  - OpenAI API key 
+  - Google Generative AI (Gemini) API key (optional)
   - Pinecone API key (optional, for RAG)
   - Supabase credentials (optional, for persistence)
 
@@ -153,8 +153,8 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Edit .env with your API keys
-# GOOGLE_API_KEY=your_gemini_api_key
-# OPENAI_API_KEY=your_openai_api_key (optional)
+# GOOGLE_API_KEY=your_gemini_api_key (optional)
+# OPENAI_API_KEY=your_openai_api_key 
 # PINECONE_API_KEY=your_pinecone_key (optional)
 # SUPABASE_URL=your_supabase_url (optional)
 # SUPABASE_KEY=your_supabase_key (optional)
@@ -217,7 +217,7 @@ The application will be available at `http://localhost:5173`
 - **Framework**: FastAPI (Python web framework)
 - **Server**: Uvicorn (ASGI server)
 - **AI/ML**: 
-  - Google Generative AI (Gemini models)
+  - Open AI models
   - LangChain (LLM orchestration)
   - Pinecone (Vector database for RAG)
   - Sentence Transformers (Embeddings)
@@ -259,7 +259,7 @@ The application will be available at `http://localhost:5173`
 ├─────────────────────────────────────────────────────────────┤
 │              External Services & Databases                  │
 │  ┌─────────────┬──────────────┬─────────────────────┐      │
-│  │Google Gemini│  Pinecone    │   Supabase          │      │
+│  │Open AI Model│  Pinecone    │   Supabase          │      │
 │  │   (LLMs)    │ (Vector DB)  │ (Data + Auth)       │      │
 │  └─────────────┴──────────────┴─────────────────────┘      │
 └─────────────────────────────────────────────────────────────┘
@@ -270,7 +270,7 @@ The application will be available at `http://localhost:5173`
 1. **Contract Drafting**:
    ```
    User Input → Frontend → API Endpoint → Ingestion Agent → 
-   LLM (Gemini) → Response → Frontend Display
+   LLM (OpenAI) → Response → Frontend Display
    ```
 
 2. **Compliance Checking**:
@@ -573,6 +573,7 @@ We welcome contributions! Here's how to help:
 - [Backend Documentation](./backend/README.md)
 - [Frontend Documentation](./frontend/README.md)
 - [API Documentation](http://localhost:8000/docs) (Swagger UI)
+- [Open AI API docs :](https://developers.openai.com/api/reference/overview/)
 - [Google Generative AI Docs](https://ai.google.dev)
 - [FastAPI Docs](https://fastapi.tiangolo.com)
 - [React Docs](https://react.dev)
