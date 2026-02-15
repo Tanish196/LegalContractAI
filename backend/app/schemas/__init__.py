@@ -117,12 +117,14 @@ class ComplianceCheckRequest(BaseModel):
     """Request schema for compliance check endpoint"""
     contract_text: str = Field(..., description="Full contract text to analyze", min_length=50)
     jurisdiction: Optional[str] = Field("United States", description="Legal jurisdiction for compliance")
+    provider: Optional[str] = Field("google", description="Preferred LLM provider (openai or google)")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "contract_text": "TERMINATION CLAUSE\n\nEither party may terminate...",
-                "jurisdiction": "United States"
+                "jurisdiction": "United States",
+                "provider": "google"
             }
         }
 

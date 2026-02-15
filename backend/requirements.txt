@@ -18,6 +18,7 @@ python-dotenv==1.0.0
 langchain
 langchain-community
 langchain-google-genai
+google-generativeai
 langchain-huggingface
 sentence-transformers==3.2.1
 pinecone-client[grpc]>=3.2.0

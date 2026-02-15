@@ -10,27 +10,38 @@ class ClauseExtractorAgent:
     async def process(self, state: ContractState):
         logger.info("ClauseExtractorAgent: Extracting clauses")
         
-        # Placeholder for complex extraction logic. 
-        # In production -> LLM or regex based splitting.
-        
-        # Simple mock extraction for prototype
-        state.clauses = [
-            {"id": "1", "text": state.raw_text[:500], "type": "General"},
-             # ... real implementation would parse the text
-        ]
-        
-        # Let's try to do a real basic split if possible or just treat whole text as one if short
-        # For the prototype, we can ask LLM to identify key clauses
-        
-
-        llm = get_llm_client()
+        provider = state.metadata.get("provider", "google")
+        llm = get_llm_client(provider=provider)
         prompt = f"""
-        Extract key clauses from the text. Return a JSON list of objects with 'title', 'text', and 'type'.
-        
-        Text: {state.raw_text[:4000]}
+        Extract ALL legal clauses from the following contract text.
+        For each clause, provide:
+        1. A concise title/heading.
+        2. The exact text of the clause.
+        3. The type of clause (e.g., Liability, Termination, Payment, etc.).
+
+        Return ONLY a JSON list of objects:
+        [
+          {{"id": "1", "title": "...", "text": "...", "type": "..."}},
+          ...
+        ]
+
+        Text:
+        {state.raw_text}
         """
         
-        # Skipping actual network call for reliability in this skeleton phase, 
-        # but this is where it would go.
+        try:
+            response = await llm.generate(prompt)
+            # Basic JSON extraction from response string
+            import re
+            json_match = re.search(r'\[.*\]', response, re.DOTALL)
+            if json_match:
+                state.clauses = json.loads(json_match.group(0))
+            else:
+                # Fallback if LLM fails to provide clean JSON
+                state.clauses = [{"id": "1", "text": state.raw_text, "type": "Unclassified"}]
+        except Exception as e:
+            logger.error(f"Clause extraction failed: {e}")
+            state.clauses = [{"id": "1", "text": state.raw_text, "type": "Error Fallback"}]
+
         
-        state.add_audit_log("ClauseExtractor", "Extract", f"Extracted {len(state.clauses)} candidates")
+        state.add_audit_log("ClauseExtractor", "Extract", f"Extracted {len(state.clauses)} clauses")

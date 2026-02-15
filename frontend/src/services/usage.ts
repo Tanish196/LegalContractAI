@@ -47,23 +47,7 @@ export async function recordUsage(
       throw new Error(`Failed to record usage via backend: ${response.statusText}`);
     }
 
-    // 2. Decrement remaining credits (still client-side for now, but backend could handle this too)
-    const { data: creditData, error: fetchError } = await supabase
-      .from('user_credits')
-      .select('credits_remaining, credits_used_today')
-      .eq('user_id', userId)
-      .single();
-
-    if (!fetchError && creditData) {
-      await supabase
-        .from('user_credits')
-        .update({
-          credits_remaining: Math.max(0, creditData.credits_remaining - 1),
-          credits_used_today: (creditData.credits_used_today || 0) + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-    }
+    // 2. Decrement logic removed - managed by AIForm.tsx to avoid double counting
   } catch (err) {
     console.error('Failed to record usage:', err);
     throw err;

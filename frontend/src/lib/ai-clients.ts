@@ -106,7 +106,7 @@ export const aiClient = {
       let provider = options?.provider;
       if (!provider) {
         const { data: { session } } = await supabase.auth.getSession();
-        provider = session?.user?.user_metadata?.llm_provider || 'openai';
+        provider = session?.user?.user_metadata?.llm_provider || 'google';
       }
 
       const payload = {

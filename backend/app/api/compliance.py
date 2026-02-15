@@ -54,7 +54,8 @@ async def check_compliance_endpoint(request: ComplianceCheckRequest):
         
         metadata = {
             "jurisdiction": jurisdiction,
-            "request_source": "api"
+            "request_source": "api",
+            "provider": request.provider or "google"
         }
         
         final_state = await orchestrator.run(raw_text=contract_text, metadata=metadata)
@@ -74,27 +75,58 @@ async def check_compliance_endpoint(request: ComplianceCheckRequest):
                 citations=finding.get("citations", [])
             ))
 
-        summary = final_state.risk_summary
+        # 1. Detailed Summary Metrics
+        high_count = sum(1 for issue in compliance_report if issue.risk_level == "high")
+        med_count = sum(1 for issue in compliance_report if issue.risk_level == "medium")
+        low_count = sum(1 for issue in compliance_report if issue.risk_level == "low")
         
-        # If risk summary is empty/basic, ensure it has the required fields
-        if not summary.get("overall_score"):
-             # Fallback logic if agent didn't populate it fully (e.g. error)
-             high_count = sum(1 for issue in compliance_report if issue.risk_level == "high")
-             summary = {
-                "overall_score": 100 - (high_count * 10),
-                "risk_level": "High" if high_count > 0 else "Low",
-                 "breakdown": {"high": high_count}
-             }
+        summary = {
+            "total_clauses": len(final_state.clauses or []),
+            "high_risk": high_count,
+            "medium_risk": med_count,
+            "low_risk": low_count,
+            "risk_level": final_state.risk_summary.get("risk_level", "Low"),
+            "overall_score": final_state.risk_summary.get("overall_score", 100)
+        }
+        
+        # 2. Action Items for Insights
+        action_items = []
+        for issue in compliance_report:
+            if issue.risk_level in ["high", "medium"]:
+                action_items.append({
+                    "title": issue.heading or "Compliance Issue",
+                    "risk_level": issue.risk_level,
+                    "actions": [issue.fix]
+                })
+
+        # 3. Dynamic Markdown Generation
+        report_md = f"# Compliance Analysis Report\n\n"
+        report_md += f"**Jurisdiction:** {jurisdiction}\n"
+        report_md += f"**Overall Risk Level:** {summary['risk_level']}\n\n"
+        
+        if compliance_report:
+            report_md += "## Identified Issues\n\n"
+            for issue in compliance_report:
+                icon = "🔴" if issue.risk_level == "high" else "🟡" if issue.risk_level == "medium" else "🟢"
+                report_md += f"### {icon} {issue.heading}\n"
+                report_md += f"**Clause:** *\"{issue.clause[:200]}...\"*\n\n"
+                report_md += f"**Issue:** {issue.issue_summary}\n\n"
+                report_md += f"**Suggested Fix:** {issue.fix}\n\n"
+                if issue.citations:
+                    report_md += f"**Citations:** {', '.join(issue.citations)}\n\n"
+                report_md += "---\n\n"
+        else:
+            report_md += "✅ No major compliance issues were identified in this document."
 
         response = ComplianceCheckResponse(
             drafted_contract=final_state.final_contract or contract_text,
             compliance_report=compliance_report,
             summary=summary,
             insights={
-                "analysis_logs": [log.get("details") for log in final_state.audit_log if log.get("action") == "Analyze"],
-                "total_issues": len(compliance_report)
+                "action_items": action_items,
+                "analysis_logs": [log.get("details") for log in final_state.audit_log if log.get("action") == "Analyze"]
             },
-            report_markdown=f"# Compliance Report\n\nOverall Risk: {summary.get('risk_level')}\n\n..."
+            report_markdown=report_md
         )
         
         logger.info(f"Compliance check completed: {len(compliance_report)} issues found")

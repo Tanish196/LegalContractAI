@@ -12,9 +12,12 @@ import aiohttp
 logger = logging.getLogger(__name__)
 
 
+import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
 class GeminiClient:
     """
-    Gemini LLM client for backend services.
+    Gemini LLM client for backend services using google-generativeai SDK.
     Compatible with compliance_agent and other agents.
     """
 
@@ -24,91 +27,44 @@ class GeminiClient:
 
         Args:
             api_key: Gemini API key (defaults to GEMINI_API_KEY env var)
-            model: Model name (defaults to GEMINI_MODEL env var or gemini-2.0-flash-exp)
+            model: Model name (defaults to GEMINI_MODEL env var or gemini-2.5-flash)
         """
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.model_name = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         
         if not self.api_key:
             raise ValueError("Gemini API key not provided. Set GEMINI_API_KEY environment variable.")
         
-        self.endpoint = f"https://generativelanguage.googleapis.com/v1/models/{self.model}:generateContent"
-        logger.info(f"GeminiClient initialized with model: {self.model}")
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel(self.model_name)
+        logger.info(f"GeminiClient initialized with model: {self.model_name}")
 
-    async def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 4096) -> str:
+    async def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 25600) -> str:
         """
-        Generate text using Gemini API.
-
-        Args:
-            prompt: Input prompt text
-            temperature: Sampling temperature (0.0 to 1.0)
-            max_tokens: Maximum output tokens
-
-        Returns:
-            Generated text response
+        Generate text using Gemini SDK.
         """
         try:
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt}
-                        ]
-                    }
-                ],
-                "generationConfig": {
-                    "maxOutputTokens": max_tokens,
-                    "temperature": temperature
-                }
-            }
-
-            headers = {
-                "Content-Type": "application/json",
-                "x-goog-api-key": self.api_key
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.endpoint,
-                    headers=headers,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=60)
-                ) as response:
-                    
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logger.error(f"Gemini API error {response.status}: {error_text}")
-                        raise Exception(f"Gemini API error: {error_text}")
-                    
-                    result = await response.json()
-                    
-                    # Parse response
-                    candidates = result.get("candidates", [])
-                    if candidates and len(candidates) > 0:
-                        candidate = candidates[0]
-                        parts = candidate.get("content", {}).get("parts", [])
-                        if parts and len(parts) > 0:
-                            text = "".join(part.get("text", "") for part in parts)
-                            return text
-                    
-                    # Fallback
-                    logger.warning("Unexpected Gemini response format")
-                    return json.dumps(result)
-
+            generation_config = genai.types.GenerationConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens
+            )
+            
+            response = await self.model.generate_content_async(
+                prompt,
+                generation_config=generation_config
+            )
+            
+            return response.text
         except Exception as e:
             logger.error(f"Error calling Gemini API: {str(e)}", exc_info=True)
+            # Fallback for blocked content or other issues
+            if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
+                 logger.warning(f"Prompt blocked: {e.response.prompt_feedback}")
             raise
 
     async def generate_contract(self, metadata: Dict[str, Any], requirements: str) -> str:
         """
         Generate a contract using metadata and requirements.
-
-        Args:
-            metadata: Contract metadata (parties, jurisdiction, etc.)
-            requirements: User requirements and specifications
-
-        Returns:
-            Generated contract text in Markdown
         """
         parties = metadata.get("parties", [])
         jurisdiction = metadata.get("jurisdiction", "United States")
@@ -149,100 +105,38 @@ Generate a complete, professional contract in Markdown format."""
 
     async def generate_with_pdfs(self, system_prompt: str, user_prompt: str, pdf_paths: Optional[list] = None, temperature: float = 0.2, max_tokens: int = 4096) -> Dict[str, Any]:
         """
-        Generate content using Gemini and attach PDF templates as file references.
-
-        Args:
-            system_prompt: System-level instructions.
-            user_prompt: The user-level prompt describing requirements.
-            pdf_paths: List of local PDF absolute paths to include as file URIs.
-            temperature: Sampling temperature.
-            max_tokens: Maximum output tokens.
-
-        Returns:
-            Dict with key 'text' containing the generated contract.
+        Generate content using Gemini and attach PDF templates.
+        Uses the File API to upload PDFs.
         """
         try:
-            files_payload = []
+            parts = [f"{system_prompt}\n\n{user_prompt}"]
+            uploaded_files = []
+            
             if pdf_paths:
                 for p in pdf_paths:
                     try:
-                        # Ensure absolute path and convert to file URI
-                        from pathlib import Path
-                        path_obj = Path(p).resolve()
-                        uri = f"file:///{path_obj.as_posix()}"
-                        files_payload.append({
-                            "file": {
-                                "mime_type": "application/pdf",
-                                "file_uri": uri
-                            }
-                        })
-                    except Exception:
-                        logger.warning(f"Skipping invalid PDF path: {p}")
+                        # Upload file using the SDK
+                        if os.path.exists(p):
+                            logger.info(f"Uploading file for Gemini: {p}")
+                            file_upload = genai.upload_file(p)
+                            uploaded_files.append(file_upload)
+                            parts.append(file_upload)
+                        else:
+                            logger.warning(f"PDF path not found: {p}")
+                    except Exception as e:
+                        logger.warning(f"Failed to upload PDF {p}: {e}")
 
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": f"{system_prompt}\n\n{user_prompt}"}
-                        ] + [
-                            {
-                                "file_data": {
-                                    "mime_type": "application/pdf",
-                                    "file_uri": f["file"]["file_uri"]
-                                }
-                            }
-                            for f in files_payload
-                        ]
-                    }
-                ],
-                "generationConfig": {
-                    "maxOutputTokens": max_tokens,
-                    "temperature": temperature
-                }
-            }
+            generation_config = genai.types.GenerationConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens
+            )
 
-            headers = {
-                "Content-Type": "application/json",
-                "x-goog-api-key": self.api_key
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.endpoint, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=120)) as resp:
-                    text = await resp.text()
-                    if resp.status != 200:
-                        logger.error(f"Gemini API error {resp.status}: {text}")
-                        raise Exception(f"Gemini API error: {text}")
-
-                    try:
-                        result = await resp.json()
-                    except Exception:
-                        # If response not JSON, return raw text
-                        return {"text": text}
-
-                    # Try to extract text from common Gemini response shapes
-                    # 1) candidates -> content -> parts -> text
-                    candidates = result.get("candidates") or []
-                    if candidates:
-                        candidate = candidates[0]
-                        content = candidate.get("content") or {}
-                        parts = content.get("parts") or []
-                        if parts:
-                            return {"text": "".join(p.get("text", "") for p in parts)}
-
-                    # 2) outputs -> content -> list of output_text items
-                    outputs = result.get("outputs") or []
-                    if outputs:
-                        out0 = outputs[0]
-                        contents = out0.get("content") or []
-                        texts = []
-                        for c in contents:
-                            if isinstance(c, dict) and c.get("type") == "output_text":
-                                texts.append(c.get("text", ""))
-                        if texts:
-                            return {"text": "\n".join(texts)}
-
-                    # Fallback: return stringified result
-                    return {"text": json.dumps(result)}
+            response = await self.model.generate_content_async(
+                parts,
+                generation_config=generation_config
+            )
+            
+            return {"text": response.text}
 
         except Exception as e:
             logger.error(f"Error in generate_with_pdfs: {str(e)}", exc_info=True)

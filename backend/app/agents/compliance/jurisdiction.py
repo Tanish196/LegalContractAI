@@ -19,19 +19,30 @@ class JurisdictionResolverAgent:
 
         # Else, use LLM to detect
 
-        llm = get_llm_client()
+        provider = state.metadata.get("provider", "google")
+        llm = get_llm_client(provider=provider)
         prompt = f"""
-        Analyze the following contract text and identify the governing law and jurisdiction.
-        Return JSON with keys: "country", "state" (if applicable), "city" (if applicable).
+        Analyze the following contract text and identify the governing law and jurisdiction (Country and State/Region).
         
-        Text: {state.raw_text[:2000]}...
+        Return ONLY a JSON object:
+        {{
+            "country": "...",
+            "region": "..."
+        }}
+        
+        Text:
+        {state.raw_text[:3000]}
         """
         
         try:
-             # This is a placeholder for actual LLM call which would need structured output parsing
-             # defaulting to India for now as per project scope
-             state.jurisdiction = {"country": "India", "derived_from": "default"}
-             state.add_audit_log("JurisdictionResolver", "Inference", "Defaulted to India (LLM placeholder)")
+             response = await llm.generate(prompt)
+             import re
+             json_match = re.search(r'\{.*\}', response, re.DOTALL)
+             if json_match:
+                 state.jurisdiction = json.loads(json_match.group(0))
+             else:
+                 state.jurisdiction = {"country": "India", "region": "Unknown"}
+             state.add_audit_log("JurisdictionResolver", "Inference", f"Detected: {state.jurisdiction}")
         except Exception as e:
              logger.error(f"Jurisdiction detection failed: {e}")
              state.jurisdiction = {"country": "India", "error": str(e)}
