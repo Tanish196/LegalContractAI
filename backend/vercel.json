@@ -5,8 +5,9 @@
       "src": "app/main.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "250mb",
-        "runtime": "python3.11"
+        "maxLambdaSize": "500mb",
+        "runtime": "python3.11",
+        "useFileSystemAPI": true
       }
     }
   ],
@@ -20,6 +21,13 @@
     "PYTHONUNBUFFERED": "1",
     "PYTHONDONTWRITEBYTECODE": "1",
     "PIP_NO_CACHE_DIR": "1",
-    "PORT": "3000"
+    "PORT": "3000",
+    "NODE_OPTIONS": "--max-old-space-size=2048"
+  },
+  "functions": {
+    "app/main.py": {
+      "maxDuration": 60,
+      "memory": 3008
+    }
   }
 }
