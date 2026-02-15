@@ -37,6 +37,11 @@ class GeminiClient:
         
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel(self.model_name)
+        
+        from app.utils.rate_limiter import RateLimiter
+        # Gemini Rate Limits: 10 RPM (Flash 2.0 Free Tier)
+        self.rate_limiter = RateLimiter(rpm=10)
+        
         logger.info(f"GeminiClient initialized with model: {self.model_name}")
 
     async def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 25600) -> str:
@@ -49,10 +54,11 @@ class GeminiClient:
                 max_output_tokens=max_tokens
             )
             
-            response = await self.model.generate_content_async(
-                prompt,
-                generation_config=generation_config
-            )
+            async with self.rate_limiter:
+                response = await self.model.generate_content_async(
+                    prompt,
+                    generation_config=generation_config
+                )
             
             return response.text
         except Exception as e:
@@ -131,10 +137,11 @@ Generate a complete, professional contract in Markdown format."""
                 max_output_tokens=max_tokens
             )
 
-            response = await self.model.generate_content_async(
-                parts,
-                generation_config=generation_config
-            )
+            async with self.rate_limiter:
+                response = await self.model.generate_content_async(
+                    parts,
+                    generation_config=generation_config
+                )
             
             return {"text": response.text}
 

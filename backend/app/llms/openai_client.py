@@ -37,6 +37,11 @@ class OpenAIClient:
             model=self.model,
             temperature=0.3
         )
+
+        from app.utils.rate_limiter import RateLimiter
+        # OpenAI Rate Limits: 20 RPM, 1 RPS (Software Limit)
+        self.rate_limiter = RateLimiter(rpm=20, rps=1.0)
+        
         logger.info(f"OpenAIClient initialized with model: {self.model}")
 
     async def generate(self, prompt: str, temperature: float = 0.3, max_tokens: int = 4096) -> str:
@@ -57,7 +62,10 @@ class OpenAIClient:
                 self.chat_model.temperature = temperature
                 
             messages = [HumanMessage(content=prompt)]
-            response = await self.chat_model.ainvoke(messages)
+            
+            async with self.rate_limiter:
+                response = await self.chat_model.ainvoke(messages)
+            
             return response.content
 
         except Exception as e:
@@ -114,7 +122,8 @@ Generate a complete, professional contract in Markdown format."""
         ]
 
         try:
-            response = await self.chat_model.ainvoke(messages)
+            async with self.rate_limiter:
+                response = await self.chat_model.ainvoke(messages)
             return response.content
         except Exception as e:
             logger.error(f"Error in generate_contract: {str(e)}", exc_info=True)
