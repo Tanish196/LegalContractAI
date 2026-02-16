@@ -6,7 +6,7 @@ SYSTEM 2: Uses compliance_service with multi-agent pipeline
 import logging
 from fastapi import APIRouter, HTTPException, status
 from app.schemas import ComplianceCheckRequest, ComplianceCheckResponse, ComplianceIssue, ErrorResponse
-from app.services.compliance_service import check_compliance as run_compliance_pipeline
+# from app.services.compliance_service import check_compliance as run_compliance_pipeline
 
 logger = logging.getLogger(__name__)
 

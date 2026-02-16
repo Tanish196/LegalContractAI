@@ -59,7 +59,7 @@ async def analyze_clauses(request: ClauseAnalysisRequest):
 
         # 2. Analyze with LLM (uses hybrid client for fallback)
         from app.llms import get_llm_client
-        client = get_llm_client()
+        client = get_llm_client(request.provider)
         llm = client.chat_model
         
         parser = JsonOutputParser(pydantic_object=ClauseAnalysisResponse)

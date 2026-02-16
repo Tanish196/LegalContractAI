@@ -6,7 +6,7 @@ Uses: ingestion_agent + LLM (no other agents)
 import logging
 from fastapi import APIRouter, HTTPException, Response, status
 from app.schemas import ContractDraftRequest
-from app.services.draft_service import generate_draft
+# from app.services.draft_service import generate_draft
 
 logger = logging.getLogger(__name__)
 

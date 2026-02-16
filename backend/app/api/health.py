@@ -30,7 +30,9 @@ async def health_check():
     
     try:
         # Check if agents can be imported
-        from app.agents import ingestion_agent, clause_agent, compliance_agent, risk_agent, merge_agent
+        # Check if agents can be imported
+        from app.agents.compliance import ComplianceOrchestrator
+        from app.agents.drafting import DraftingOrchestrator
         agents_loaded = True
     except Exception as e:
         logger.error(f"Failed to load agents: {str(e)}")

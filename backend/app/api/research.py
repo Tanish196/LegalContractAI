@@ -71,7 +71,7 @@ async def legal_research(request: LegalResearchRequest):
             )
 
         from app.llms import get_llm_client
-        client = get_llm_client()
+        client = get_llm_client(request.provider)
         llm = client.chat_model
         
         prompt = PromptTemplate.from_template(

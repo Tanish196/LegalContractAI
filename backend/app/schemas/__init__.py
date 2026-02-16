@@ -14,6 +14,7 @@ class ErrorResponse(BaseModel):
 # --- Clause Analysis ---
 class ClauseAnalysisRequest(BaseModel):
     text: str = Field(..., min_length=10, description="Contract text to analyze")
+    provider: Optional[str] = None
 
 class ClauseRisk(BaseModel):
     clause_text: str
@@ -29,6 +30,7 @@ class ClauseAnalysisResponse(BaseModel):
 class LegalResearchRequest(BaseModel):
     query: str = Field(..., min_length=5, description="Legal question")
     jurisdiction: str = "India"
+    provider: Optional[str] = None
 
 class Citation(BaseModel):
     title: str
@@ -42,6 +44,7 @@ class LegalResearchResponse(BaseModel):
 # --- Case Summarization ---
 class CaseSummaryRequest(BaseModel):
     case_text: str = Field(..., min_length=100)
+    provider: Optional[str] = None
 
 class CaseSummaryResponse(BaseModel):
     summary: str
@@ -52,6 +55,7 @@ class CaseSummaryResponse(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     user_id: Optional[str] = None
+    provider: Optional[str] = None
     history: List[Dict[str, str]] = [] # [{"role": "user", "content": "..."}]
 
 class ChatResponse(BaseModel):

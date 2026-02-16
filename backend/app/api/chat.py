@@ -201,7 +201,10 @@ async def chat_assistant(request: ChatRequest):
                 suggested_action=None
             )
 
-        client = get_llm_client(request.provider if hasattr(request, 'provider') else None, use_fast=True)
+        # Determine provider: prefer request param, fallback to None (which defaults to OpenAI/Hybrid in factory)
+        # The client factory will handle the fallback logic
+        chosen_provider = request.provider if hasattr(request, 'provider') and request.provider else None
+        client = get_llm_client(chosen_provider, use_fast=True)
         
         # Try LangChain agent path (requires OpenAI chat_model)
         try:

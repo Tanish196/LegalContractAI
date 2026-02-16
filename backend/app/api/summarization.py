@@ -39,7 +39,7 @@ async def summarize_case(request: CaseSummaryRequest):
             )
 
         from app.llms import get_llm_client
-        client = get_llm_client()
+        client = get_llm_client(request.provider)
         llm = client.chat_model
         
         parser = JsonOutputParser(pydantic_object=CaseSummaryOutput)
