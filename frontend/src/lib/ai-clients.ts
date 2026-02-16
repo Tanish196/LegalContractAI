@@ -62,10 +62,42 @@ const ROUTES: Record<TaskType, RouteConfig> = {
     path: '/api/analysis/analyze-clauses',
     expects: 'json',
     buildPayload: (content) => ({ text: content }),
-    transform: (payload) => ({
-      result: typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2),
-      metadata: payload
-    })
+    transform: (payload) => {
+      // Handle potential raw string response (fallback)
+      if (typeof payload === 'string') {
+        return { result: payload, metadata: null };
+      }
+
+      // Format structured response into Markdown
+      const summary = payload.summary || 'Analysis complete.';
+      let markdown = `### Executive Summary\n\n${summary}\n\n### Detailed Risk Analysis\n\n`;
+
+      if (payload.risks && Array.isArray(payload.risks) && payload.risks.length > 0) {
+        payload.risks.forEach((risk: any, index: number) => {
+          const riskIcon = risk.risk_level === 'High' ? '🔴' : risk.risk_level === 'Medium' ? '🟡' : '🟢';
+
+          markdown += `#### ${index + 1}. ${riskIcon} ${risk.risk_level} Risk\n\n`;
+          // Format clause text as a blockquote, truncating if extremely long to keep UI clean
+          const clauseText = risk.clause_text ? risk.clause_text.trim() : '';
+          markdown += `**Clause:**\n> "${clauseText}"\n\n`;
+
+          markdown += `**Analysis:** ${risk.explanation}\n\n`;
+
+          if (risk.recommendation) {
+            markdown += `**Recommendation:** ${risk.recommendation}\n\n`;
+          }
+
+          markdown += `---\n\n`;
+        });
+      } else {
+        markdown += `_No specific high-risk clauses identified in this document._\n`;
+      }
+
+      return {
+        result: markdown,
+        metadata: payload
+      };
+    }
   },
   'loophole-detection': {
     path: '/api/reports/generate',
